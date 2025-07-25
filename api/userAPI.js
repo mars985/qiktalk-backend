@@ -92,7 +92,7 @@ module.exports = function (app) {
   //   res.send(deletedUser);
   // });
 
-  app.get("/login", async (req, res) => {
+  app.post("/login", async (req, res) => {
     let { email, password } = req.body;
     const foundUser = await user.findOne({ email });
     if (!foundUser) {
