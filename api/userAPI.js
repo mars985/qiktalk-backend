@@ -26,6 +26,16 @@ module.exports = function (app) {
   app.post("/createUser", async (req, res) => {
     let { username, email, password } = req.body;
 
+    let userExists = await user.find({ email });
+    if(userExists.length > 0) {
+      return res.status(400).send("User already exists");
+    }
+
+    userExists = await user.find({ username });
+    if(userExists.length > 0) {
+      return res.status(400).send("Username taken");
+    }
+
     bcrypt.genSalt(10, async (err, salt) => {
       if (err) {
         return res.status(500).send("Error generating salt");
@@ -44,18 +54,13 @@ module.exports = function (app) {
 
         let token = jwt.sign({ email }, "secretkey");
         res.cookie("token", token);
-        
+
         res.status(201).send("User created");
       });
     });
   });
 
-  // app.get("/read", async (req, res) => {
-  //   const users = await user.find();
-  //   res.send(users);
-  // });
-
-  app.post("/update", authenticate, async (req, res) => {
+  app.post("/updateUser", authenticate, async (req, res) => {
     let { username, email, password } = req.body;
 
     bcrypt.genSalt(10, async (err, salt) => {
@@ -72,20 +77,20 @@ module.exports = function (app) {
         const updatedUser = await user.findOneAndUpdate({
           username,
           email,
-          password,
-        });
+        }, {password});
         if (!updatedUser) {
           return res.status(404).send("User not found");
         }
+        return res.status(200).send("User updated successfully" + updatedUser.username);
       });
     });
   });
 
-  app.post("/delete", authenticate, async (req, res) => {
-    let { username } = req.body;
-    const deletedUser = await user.findoneAndDelete({ username });
-    res.send(deletedUser);
-  });
+  // app.post("/delete", authenticate, async (req, res) => {
+  //   let { username } = req.body;
+  //   const deletedUser = await user.findoneAndDelete({ username });
+  //   res.send(deletedUser);
+  // });
 
   app.get("/login", async (req, res) => {
     let { email, password } = req.body;
