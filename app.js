@@ -1,9 +1,16 @@
 const express = require("express");
 const { Server } = require("socket.io");
 const { createServer } = require("http");
-const path = require("path");
+const cookieParser = require("cookie-parser");
+const cors = require("cors");
 
 const app = express();
+app.use(
+  cors({
+    origin: "http://localhost:5173", // your frontend URL
+    credentials: true, // allow cookies
+  })
+);
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
@@ -16,7 +23,7 @@ const io = new Server(server, {
 app.set("view engine", "ejs");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "public")));
+app.use(cookieParser());
 
 // root
 app.get("/", (req, res) => {
