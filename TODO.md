@@ -12,13 +12,13 @@
 - two users
 - array of messages -->
 
-## conversation
+<!-- ## conversation
 
 - users
 - conversation id
 - array of messages
 - group name (nullable)
-- createdAt (nullable)
+- createdAt (nullable) -->
 
 ## user
 
@@ -28,9 +28,12 @@
 
 # functions
 
-search(substr) => matchingUsernames[]
+<!-- search(substr) => matchingUsernames[] -->
+searchUsers(substr, limit = 10) => [{ id, username, avatar }]
 
-createDM(user) {
+Conversation.find({ participants: userId })
+
+<!-- createDM(user) {
     if (find(loggedInUser + user))
     {
         // conversation already exists
@@ -39,7 +42,25 @@ createDM(user) {
         user.conversations.append(loggedInUser + user) // dm id 
         loggedInUser.conversations.append(loggedInUser + user) // dm id 
     }
+} -->
+
+function createDM(targetUserId) {
+    const existingDM = Conversation.find({
+        type: "dm",
+        participants: { $all: [loggedInUserId, targetUserId], $size: 2 },
+    });
+
+    if (existingDM) return open(existingDM);
+    
+    const newDM = Conversation.create({
+        participants: [loggedInUserId, targetUserId],
+        type: "dm",
+        messages: [],
+    });
+
+    return open(newDM);
 }
+
 
 createGroup(participants[]) {
     forEach(user : participants)

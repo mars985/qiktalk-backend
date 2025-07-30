@@ -1,23 +1,35 @@
 const user = require("../models/usermodel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const authenticate = require("./auth");
 
 module.exports = function (app) {
-  function authenticate(req, res, next) {
-    const token = req.cookies.token; // Make sure you use cookie-parser middleware
-
-    if (!token) {
-      return res.status(401).send("Not logged in");
+  app.post("/login", async (req, res) => {
+    let { email, password } = req.body;
+    const foundUser = await user.findOne({ email });
+    if (!foundUser) {
+      return res.status(404).send("User not found");
     }
 
-    try {
-      const decoded = jwt.verify(token, "secretkey");
-      req.user = decoded; // You can now access req.user.email etc.
-      next();
-    } catch (err) {
-      return res.status(401).send("Invalid token");
-    }
-  }
+    bcrypt.compare(password, foundUser.password, (err, result) => {
+      // TODO: change error messages
+      if (err) {
+        return res.status(500).send("Error comparing passwords");
+      }
+      if (!result) {
+        return res.status(401).send("Invalid password");
+      }
+
+      let token = jwt.sign({ email }, "secretkey");
+      res.cookie("token", token);
+      res.send("Login successful");
+    });
+  });
+
+  app.get("/logout", authenticate, (req, res) => {
+    res.clearCookie("token");
+    res.redirect("/");
+  });
 
   app.get("/verify", authenticate, (req, res) => {
     res.send(true);
@@ -27,12 +39,12 @@ module.exports = function (app) {
     let { username, email, password } = req.body;
 
     let userExists = await user.find({ email });
-    if(userExists.length > 0) {
+    if (userExists.length > 0) {
       return res.status(400).send("User already exists");
     }
 
     userExists = await user.find({ username });
-    if(userExists.length > 0) {
+    if (userExists.length > 0) {
       return res.status(400).send("Username taken");
     }
 
@@ -74,16 +86,33 @@ module.exports = function (app) {
         }
         password = hash;
 
-        const updatedUser = await user.findOneAndUpdate({
-          username,
-          email,
-        }, {password});
+        const updatedUser = await user.findOneAndUpdate(
+          {
+            username,
+            email,
+          },
+          { password }
+        );
         if (!updatedUser) {
           return res.status(404).send("User not found");
         }
-        return res.status(200).send("User updated successfully" + updatedUser.username);
+        return res
+          .status(200)
+          .send("User updated successfully" + updatedUser.username);
       });
     });
+  });
+
+  app.get("/searchUsernames", authenticate, async (req, res) => {
+    const loggedInUserId = req.user._id;
+    searchString = req.searchString;
+    const users = await user
+      .find({
+        username: { $regex: searchString, $options: "i" },
+        _id: { $ne: loggedInUserId },
+      })
+      .select("username");
+    res.send(users);
   });
 
   // app.post("/delete", authenticate, async (req, res) => {
@@ -91,31 +120,4 @@ module.exports = function (app) {
   //   const deletedUser = await user.findoneAndDelete({ username });
   //   res.send(deletedUser);
   // });
-
-  app.post("/login", async (req, res) => {
-    let { email, password } = req.body;
-    const foundUser = await user.findOne({ email });
-    if (!foundUser) {
-      return res.status(404).send("User not found");
-    }
-
-    bcrypt.compare(password, foundUser.password, (err, result) => {
-      // TODO: change error messages
-      if (err) {
-        return res.status(500).send("Error comparing passwords");
-      }
-      if (!result) {
-        return res.status(401).send("Invalid password");
-      }
-
-      let token = jwt.sign({ email }, "secretkey");
-      res.cookie("token", token);
-      res.send("Login successful");
-    });
-  });
-
-  app.get("/logout", authenticate, (req, res) => {
-    res.clearCookie("token");
-    res.redirect("/");
-  });
 };

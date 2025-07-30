@@ -30,17 +30,18 @@ app.get("/", (req, res) => {
   res.send("hey");
 });
 
-// CRUD routes
+// routes
 const userAPI = require("./api/userAPI");
 const messageAPI = require("./api/messageAPI");
+const conversationAPI = require("./api/conversationAPI");
 
 userAPI(app);
 messageAPI(app);
+conversationAPI(app);
 
 // Socket.io
 io.on("connect", (socket) => {
   console.log("A user connected" + socket.id);
 });
-
 
 server.listen(3000);
