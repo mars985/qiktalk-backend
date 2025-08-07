@@ -1,4 +1,7 @@
-module.exports = function authenticate(req, res, next) {
+const jwt = require("jsonwebtoken");
+const User = require("../models/usermodel");
+
+module.exports = async function authenticate(req, res, next) {
   const token = req.cookies.token;
 
   if (!token) {
@@ -6,10 +9,19 @@ module.exports = function authenticate(req, res, next) {
   }
 
   try {
-    const user = jwt.verify(token, "secretkey");
-    req.user = user; // You can now access req.user.email etc.
+    const decoded = jwt.verify(token, "secretkey");
+
+    const loggedInUser = await User.findOne({ email: decoded.email });
+
+    if (!loggedInUser) {
+      res.clearCookie("token");
+      return res.status(401).send("User not found");
+    }
+
+    req.user = loggedInUser; // You can now access req.user.email etc.
     next();
   } catch (err) {
-    return res.status(401).send("Invalid token");
+    res.clearCookie("token");
+    res.status(401).send("Invalid token");
   }
 };

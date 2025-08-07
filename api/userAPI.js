@@ -32,7 +32,8 @@ module.exports = function (app) {
   });
 
   app.get("/verify", authenticate, (req, res) => {
-    res.send(true);
+    console.log(req.user);
+    res.json({ verified: true, user: req.user });
   });
 
   app.post("/createUser", async (req, res) => {

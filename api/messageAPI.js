@@ -1,4 +1,5 @@
 const message = require("../models/messagemodel");
+const { findOneAndUpdate } = require("../models/usermodel");
 const authenticate = require("./auth");
 
 module.exports = function (app) {
@@ -13,9 +14,14 @@ module.exports = function (app) {
     res.send(createdMsg);
   });
 
-  app.post("/updateMessage", async (req, res) => {
+  app.patch("/updateMessage", async (req, res) => {
+    let { messageid, body } = req.body;
+    const updatedMsg = await message.findOneAndUpdate(
+      { _id: messageid },
+      { body }
+    );
 
-    // res.send(updatedMsg);
+    res.send(updatedMsg);
   });
 
   app.post("/deleteMessage", async (req, res) => {
