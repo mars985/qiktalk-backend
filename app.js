@@ -31,17 +31,17 @@ app.get("/", (req, res) => {
 });
 
 // routes
-const userAPI = require("./api/userAPI");
-const messageAPI = require("./api/messageAPI");
-const conversationAPI = require("./api/conversationAPI");
+const userRoutes = require("./routes/userRoutes");
+const messageRoutes = require("./routes/messageRoutes");
+const conversationRoutes = require("./routes/conversationRoutes");
 
-userAPI(app);
-messageAPI(app);
-conversationAPI(app);
+app.use("/", userRoutes);
+app.use("/", messageRoutes);
+app.use("/", conversationRoutes);
 
 // Socket.io
 io.on("connect", (socket) => {
-  console.log("A user connected" + socket.id);
+  // console.log("A user connected" + socket.id);
 });
 
 server.listen(3000);

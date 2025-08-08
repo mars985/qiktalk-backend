@@ -18,7 +18,7 @@ module.exports = async function authenticate(req, res, next) {
       return res.status(401).send("User not found");
     }
 
-    req.user = loggedInUser; // You can now access req.user.email etc.
+    req.user = loggedInUser;
     next();
   } catch (err) {
     res.clearCookie("token");
