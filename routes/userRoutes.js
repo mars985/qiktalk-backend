@@ -4,11 +4,11 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 const authenticate = require("./auth");
-const user = require("../models/usermodel");
+const User = require("../models/usermodel");
 
 router.post("/login", async (req, res) => {
   let { email, password } = req.body;
-  const foundUser = await user.findOne({ email });
+  const foundUser = await User.findOne({ email });
   if (!foundUser) {
     return res.status(404).send("User not found");
   }
@@ -40,12 +40,12 @@ router.get("/verify", authenticate, (req, res) => {
 router.post("/createUser", async (req, res) => {
   let { username, email, password } = req.body;
 
-  let userExists = await user.find({ email });
+  let userExists = await User.find({ email });
   if (userExists.length > 0) {
     return res.status(400).send("User already exists");
   }
 
-  userExists = await user.find({ username });
+  userExists = await User.find({ username });
   if (userExists.length > 0) {
     return res.status(400).send("Username taken");
   }
@@ -60,7 +60,7 @@ router.post("/createUser", async (req, res) => {
       }
       password = hash;
 
-      const createdUser = await user.create({
+      const createdUser = await User.create({
         username,
         email,
         password,
@@ -88,7 +88,7 @@ router.post("/updateUser", authenticate, async (req, res) => {
       }
       password = hash;
 
-      const updatedUser = await user.findOneAndUpdate(
+      const updatedUser = await User.findOneAndUpdate(
         {
           username,
           email,
@@ -108,7 +108,7 @@ router.post("/updateUser", authenticate, async (req, res) => {
 router.get("/searchUsernames", authenticate, async (req, res) => {
   const loggedInUserId = req.user._id;
   searchString = req.query.searchString || "";
-  const users = await user
+  const users = await User
     .find({
       username: { $regex: searchString, $options: "i" },
       _id: { $ne: loggedInUserId },

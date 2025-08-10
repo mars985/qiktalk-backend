@@ -1,21 +1,21 @@
 const express = require("express");
 const router = express.Router();
 
-const conversation = require("../models/conversationmodel");
+const Conversation = require("../models/conversationmodel");
 const authenticate = require("./auth");
 
 router.post("/createDM", authenticate, async (req, res) => {
   try {
     let { targetUserId } = req.body;
     const loggedInUserId = req.user._id;
-    const existingDM = await conversation.findOne({
+    const existingDM = await Conversation.findOne({
       type: "dm",
       participants: { $all: [loggedInUserId, targetUserId], $size: 2 },
     });
 
     if (existingDM) return res.send(existingDM);
 
-    const newDM = await conversation.create({
+    const newDM = await Conversation.create({
       type: "dm",
       participants: [loggedInUserId, targetUserId],
       messages: [],
@@ -33,7 +33,7 @@ router.post("/createGroup", authenticate, async (req, res) => {
     let { participantIds, groupName } = req.body;
     const loggedInUserId = req.user._id;
 
-    const group = await conversation.create({
+    const group = await Conversation.create({
       participants: [...participantIds, loggedInUserId],
       type: "group",
       groupName,
@@ -50,7 +50,7 @@ router.post("/addToGroup", authenticate, async (req, res) => {
   try {
     let { participantIds, groupId } = req.body;
 
-    const group = await conversation.findOne({
+    const group = await Conversation.findOne({
       _id: groupId,
       type: "group",
     });
@@ -74,7 +74,7 @@ router.post("/addToGroup", authenticate, async (req, res) => {
 router.get("/getConversations", authenticate, async (req, res) => {
   try {
     const loggedInUserId = req.user._id;
-    const conversations = await conversation
+    const conversations = await Conversation
       .find({
         participants: loggedInUserId,
       })
