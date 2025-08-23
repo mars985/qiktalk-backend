@@ -29,8 +29,14 @@ async function loginUser({ email, password }) {
   const validPassword = await bcrypt.compare(password, user.password);
   if (!validPassword) throw new Error("Invalid password");
 
-  const token = jwt.sign({ email }, "secretkey");
-  return { user, token };
+  const token = jwt.sign({ email }, "secretkey", {expiresIn:"2d"});
+  const userWithoutPassword = {
+    _id: user._id,
+    email: user.email,
+    name: user.name, // include other fields you want to return
+  };
+
+  return { user: userWithoutPassword, token };
 }
 
 async function updateUser({ username, email, password }) {

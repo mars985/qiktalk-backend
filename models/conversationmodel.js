@@ -15,3 +15,5 @@ const conversationSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model("conversation", conversationSchema);
+
+// TODO: add createdAt for groups

@@ -6,13 +6,13 @@ module.exports = (io) => {
   socketAuth(io);
 
   io.on("connection", (socket) => {
-    console.log("User connected:", socket.user.email);
+    // console.log("User connected:", socket.user.email);
 
     messageSockets(io, socket);
     conversationSockets(io, socket);
 
     socket.on("disconnect", () => {
-      console.log("User disconnected:", socket.id);
+      // console.log("User disconnected:", socket.id);
     });
   });
 };

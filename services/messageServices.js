@@ -34,6 +34,7 @@ async function sendMessage({ message, conversationId, senderId }) {
   conversation.updatedAt = new Date();
   await conversation.save();
 
+  await newMessage.populate("sender", "_id username");
   return newMessage;
 }
 

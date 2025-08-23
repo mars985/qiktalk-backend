@@ -38,8 +38,8 @@ async function getConversations({ loggedInUserId }) {
   return Conversation.find({
     participants: loggedInUserId,
   })
-    .populate("participants", "name email")
-    .populate("messages", "text createdAt sender")
+    .populate("participants", "username email")
+    .populate("messages", "body updatedAt sender")
     .sort({ updatedAt: -1 });
 }
 
