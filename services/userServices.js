@@ -18,7 +18,7 @@ async function createUser({ username, email, password }) {
     password: hashedPassword,
   });
 
-  const token = jwt.sign({ email }, "secretkey");
+  const token = jwt.sign({ email }, process.env.JWT_SECRET);
   return { user: createdUser, token };
 }
 
@@ -29,7 +29,7 @@ async function loginUser({ email, password }) {
   const validPassword = await bcrypt.compare(password, user.password);
   if (!validPassword) throw new Error("Invalid password");
 
-  const token = jwt.sign({ email }, "secretkey", {expiresIn:"2d"});
+  const token = jwt.sign({ email }, process.env.JWT_SECRET, {expiresIn:"2d"});
   const userWithoutPassword = {
     _id: user._id,
     email: user.email,

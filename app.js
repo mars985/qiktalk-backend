@@ -4,6 +4,7 @@ const { createServer } = require("http");
 const { Server } = require("socket.io");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
+require("dotenv").config();
 
 // -------------------- App Setup --------------------
 const app = express();
@@ -11,7 +12,7 @@ const app = express();
 // Middleware
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: process.env.CORS_ORIGIN,
     credentials: true,
   })
 );
@@ -24,7 +25,7 @@ const server = createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: process.env.CORS_ORIGIN,
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -47,6 +48,15 @@ app.use("/", conversationRoutes);
 require("./sockets")(io); // pass `io` into your sockets file
 
 // -------------------- Start Server --------------------
-server.listen(3000, () => {
-  // console.log("Server running on http://localhost:3000");
-});
+const connectDb = require("./config/db");
+const startServer = async () => {
+  try {
+    await connectDb();
+    server.listen(process.env.PORT, () =>
+      console.log("Listening on port " + process.env.PORT)
+    );
+  } catch (error) {
+    console.error(error);
+  }
+};
+startServer();

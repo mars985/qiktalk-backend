@@ -7,7 +7,7 @@ async function verifyUserFromToken(token) {
 
   let decoded;
   try {
-    decoded = jwt.verify(token, "secretkey");
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
   } catch {
     throw new Error("Invalid or expired token");
   }
