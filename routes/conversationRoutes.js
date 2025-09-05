@@ -8,5 +8,6 @@ router.post("/createDM", authenticate, conversationController.createDM);
 router.post("/createGroup", authenticate, conversationController.createGroup);
 router.post("/addToGroup", authenticate, conversationController.addToGroup);
 router.get("/getConversations", authenticate, conversationController.getConversations);
+router.get("/:conversationId/user", authenticate, conversationController.getConversationUsers);
 
 module.exports = router;

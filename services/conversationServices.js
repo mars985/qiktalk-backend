@@ -43,9 +43,28 @@ async function getConversations({ loggedInUserId }) {
     .sort({ updatedAt: -1 });
 }
 
+async function getUsers({ conversationId }) {
+  try {
+    const conversation = await Conversation.findById(conversationId).populate(
+      "participants",
+      "username email avatarUrl"
+    );
+
+    if (!conversation) {
+      throw new Error("Conversation not found");
+    }
+
+    return conversation.participants;
+  } catch (err) {
+    console.error("Error in getUsers:", err);
+    throw err;
+  }
+}
+
 module.exports = {
   createDM,
   createGroup,
   addToGroup,
   getConversations,
+  getUsers,
 };

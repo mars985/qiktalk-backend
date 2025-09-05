@@ -33,7 +33,7 @@ async function loginUser({ email, password }) {
   const userWithoutPassword = {
     _id: user._id,
     email: user.email,
-    name: user.name, // include other fields you want to return
+    name: user.username,
   };
 
   return { user: userWithoutPassword, token };
