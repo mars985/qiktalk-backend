@@ -32,3 +32,8 @@
     3. server emits conversations
     4. client updates state conversations
 
+# Message model
+
+- sender: User
+- body: String
+- seen: {[User:Date]}

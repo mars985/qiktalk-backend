@@ -7,6 +7,9 @@ module.exports = (io) => {
 
   io.on("connection", (socket) => {
     // console.log("User connected:", socket.user.email);
+    socket.on("userlogin", (userId) => {
+      socket.join(userId);
+    });
 
     messageSockets(io, socket);
     conversationSockets(io, socket);
