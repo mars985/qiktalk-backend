@@ -2,7 +2,7 @@ const {
   createDM,
   createGroup,
   addToGroup,
-  getConversations,
+  getUsers,
 } = require("../services/conversationServices");
 
 module.exports = (io, socket) => {
@@ -22,7 +22,7 @@ module.exports = (io, socket) => {
           const convs = await getConversations({
             loggedInUserId: id.toString(),
           });
-          io.to(id.toString()).emit("conversations", convs);
+          io.to(id.toString()).emit("newDM", convs);
         }
       } else if (data.conversationType === "group") {
         conversation = await createGroup({
@@ -37,11 +37,12 @@ module.exports = (io, socket) => {
           const convs = await getConversations({
             loggedInUserId: id.toString(),
           });
-          io.to(id.toString()).emit("conversations", convs);
+          io.to(id.toString()).emit("newGroup", convs);
         }
       }
     } catch (err) {
       socket.emit("errorMessage", err.message);
+      console.error("Error in createConversation socket");
     }
   });
 
@@ -58,14 +59,20 @@ module.exports = (io, socket) => {
       }
 
       // Emit updated conversation to group members
-      const conversations = await getConversations({
-        loggedInUserId: socket.user._id,
+      const participantIds = await getUsers({
+        conversationId: data.conversationId,
       });
-      updatedGroup.participants.forEach((participant) => {
-        io.to(participant.toString()).emit("conversations", conversations);
+
+      participantIds.forEach((id) => {
+        io.to(id).emit("newMessage", newMessage);
       });
+
+      for (const user of participantIds) {
+        io.to(user._id.toString()).emit("newMessage", newMessage);
+      }
     } catch (err) {
       socket.emit("errorMessage", err.message);
+      console.error("Error in addToGroup");
     }
   });
 };

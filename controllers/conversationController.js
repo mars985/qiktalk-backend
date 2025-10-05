@@ -89,10 +89,30 @@ async function getConversationUsers(req, res) {
   }
 }
 
+async function getConversationById(req, res) {
+  try {
+    const { conversationId } = req.params;
+    if (!conversationId) {
+      return res.status(400).json({ success: false, message: "Conversation ID is required" });
+    }
+
+    const conversation = await conversationService.getConversationById({ conversationId });
+    if (!conversation) {
+      return res.status(404).json({ success: false, message: "Conversation not found" });
+    }
+
+    res.json({ success: true, data: conversation });
+  } catch (error) {
+    console.error("Error fetching conversation:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+}
+
 module.exports = {
   createDM,
   createGroup,
   addToGroup,
   getConversations,
   getConversationUsers,
+  getConversationById
 };

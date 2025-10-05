@@ -9,5 +9,6 @@ router.post("/createGroup", authenticate, conversationController.createGroup);
 router.post("/addToGroup", authenticate, conversationController.addToGroup);
 router.get("/getConversations", authenticate, conversationController.getConversations);
 router.get("/:conversationId/user", authenticate, conversationController.getConversationUsers);
+router.get("/:conversationId", authenticate, conversationController.getConversationById);
 
 module.exports = router;

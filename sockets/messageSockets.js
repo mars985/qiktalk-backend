@@ -23,7 +23,6 @@ module.exports = (io, socket) => {
       });
 
       for (const user of participantIds) {
-        const sockets = await io.in(user._id.toString()).fetchSockets();
         io.to(user._id.toString()).emit("newMessage", newMessage);
       }
     } catch (err) {

@@ -61,10 +61,17 @@ async function getUsers({ conversationId }) {
   }
 }
 
+async function getConversationById({ conversationId }) {
+  return await Conversation.findById(conversationId)
+    .populate("participants", "_id username")
+    .select("-messages"); // exclude messages
+}
+
 module.exports = {
   createDM,
   createGroup,
   addToGroup,
   getConversations,
   getUsers,
+  getConversationById
 };
