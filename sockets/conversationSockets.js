@@ -6,7 +6,7 @@ const {
 } = require("../services/conversationServices");
 
 module.exports = (io, socket) => {
-  socket.on("createConversation", async (data) => {
+  socket.on("createConversation", async (data, callback) => {
     try {
       let conversation;
 
@@ -16,14 +16,17 @@ module.exports = (io, socket) => {
           loggedInUserId: socket.user._id,
         });
 
-        // Emit to both participants (creator + target user)
-        const participantIds = [socket.user._id, data.targetUserId];
-        for (const id of participantIds) {
-          const convs = await getConversations({
-            loggedInUserId: id.toString(),
-          });
-          io.to(id.toString()).emit("newDM", convs);
-        }
+        const participantIds = [
+          socket.user._id.toString(),
+          data.targetUserId.toString(),
+        ];
+
+        participantIds.forEach((id) =>
+          io.to(id).emit("newConversation", conversation)
+        );
+
+        // Send response back to creator
+        if (callback) callback({ success: true, conversation });
       } else if (data.conversationType === "group") {
         conversation = await createGroup({
           participantIds: data.participantIds,
@@ -31,18 +34,21 @@ module.exports = (io, socket) => {
           loggedInUserId: socket.user._id,
         });
 
-        // Include the creator in the participant list
-        const participantIds = [...data.participantIds, socket.user._id];
-        for (const id of participantIds) {
-          const convs = await getConversations({
-            loggedInUserId: id.toString(),
-          });
-          io.to(id.toString()).emit("newGroup", convs);
-        }
+        const participantIds = [
+          ...data.participantIds.map((id) => id.toString()),
+          socket.user._id.toString(),
+        ];
+
+        participantIds.forEach((id) =>
+          io.to(id).emit("newConversation", conversation)
+        );
+
+        // Send response back to creator
+        if (callback) callback({ success: true, conversation });
       }
     } catch (err) {
-      socket.emit("errorMessage", err.message);
-      console.error("Error in createConversation socket");
+      console.error("Error in createConversation socket:", err);
+      if (callback) callback({ success: false, error: err.message });
     }
   });
 
