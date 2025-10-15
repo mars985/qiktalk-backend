@@ -2,10 +2,6 @@ const { sendMessage } = require("../services/messageServices");
 const { getUsers } = require("../services/conversationServices");
 
 module.exports = (io, socket) => {
-  socket.on("joinConversation", (conversationId) => {
-    socket.join(conversationId);
-  });
-
   socket.on("sendMessage", async (data) => {
     try {
       const newMessage = await sendMessage({

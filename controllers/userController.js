@@ -73,6 +73,32 @@ async function search(req, res) {
   }
 }
 
+async function getOnlineStatus(req, res) {
+  try {
+    const userId = req.params.userId;
+    if (!userId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "userId is required" });
+    }
+
+    const status = await userService.getOnlineStatus({ userId });
+
+    if (!status) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Status undefined" });
+    }
+
+    res.json({ success: true, data: status });
+  } catch (error) {
+    console.error("Error fetching online status:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Internal Server Error" });
+  }
+}
+
 module.exports = {
   register,
   login,
@@ -80,4 +106,5 @@ module.exports = {
   verify,
   update,
   search,
+  getOnlineStatus
 };

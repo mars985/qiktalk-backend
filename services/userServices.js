@@ -29,7 +29,9 @@ async function loginUser({ email, password }) {
   const validPassword = await bcrypt.compare(password, user.password);
   if (!validPassword) throw new Error("Invalid password");
 
-  const token = jwt.sign({ email }, process.env.JWT_SECRET, {expiresIn:"2d"});
+  const token = jwt.sign({ email }, process.env.JWT_SECRET, {
+    expiresIn: "2d",
+  });
   const userWithoutPassword = {
     _id: user._id,
     email: user.email,
@@ -60,9 +62,25 @@ async function searchUsernames({ searchString, loggedInUserId }) {
   }).select("username");
 }
 
+async function setOnline({ userId }) {
+  await User.findByIdAndUpdate(userId, { lastseen: new Date(0) });
+}
+
+async function setOffline({ userId }) {
+  await User.findByIdAndUpdate(userId, { lastseen: new Date() });
+}
+
+async function getOnlineStatus({ userId }) {
+  const user = await User.findById(userId);
+  return user ? (user.lastseen ? user.lastseen : "unknown") : null;
+}
+
 module.exports = {
   createUser,
   loginUser,
   updateUser,
   searchUsernames,
+  setOnline,
+  setOffline,
+  getOnlineStatus,
 };

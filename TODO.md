@@ -37,3 +37,9 @@
 - sender: User
 - body: String
 - seen: {[User:Date]}
+
+# TODO
+
+- implement system messages: user A added user B, user created group, etc; make "system" a user?
+- group admin role: if user in admin[], allow adding, kicking, group name change, etc.
+- message read by users

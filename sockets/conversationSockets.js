@@ -8,7 +8,7 @@ const {
 module.exports = (io, socket) => {
   socket.on("createConversation", async (data, callback) => {
     try {
-      let conversation;
+      let conversation, participantIds;
 
       if (data.conversationType === "dm") {
         conversation = await createDM({
@@ -16,17 +16,10 @@ module.exports = (io, socket) => {
           loggedInUserId: socket.user._id,
         });
 
-        const participantIds = [
+        participantIds = [
           socket.user._id.toString(),
           data.targetUserId.toString(),
         ];
-
-        participantIds.forEach((id) =>
-          io.to(id).emit("newConversation", conversation)
-        );
-
-        // Send response back to creator
-        if (callback) callback({ success: true, conversation });
       } else if (data.conversationType === "group") {
         conversation = await createGroup({
           participantIds: data.participantIds,
@@ -34,18 +27,18 @@ module.exports = (io, socket) => {
           loggedInUserId: socket.user._id,
         });
 
-        const participantIds = [
+        participantIds = [
           ...data.participantIds.map((id) => id.toString()),
           socket.user._id.toString(),
         ];
-
-        participantIds.forEach((id) =>
-          io.to(id).emit("newConversation", conversation)
-        );
-
-        // Send response back to creator
-        if (callback) callback({ success: true, conversation });
       }
+
+      participantIds.forEach((id) =>
+        io.to(id).emit("newConversation", conversation)
+      );
+
+      // Send response back to creator
+      if (callback) callback({ success: true, conversation });
     } catch (err) {
       console.error("Error in createConversation socket:", err);
       if (callback) callback({ success: false, error: err.message });
