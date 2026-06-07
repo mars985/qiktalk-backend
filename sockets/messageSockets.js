@@ -10,17 +10,15 @@ module.exports = (io, socket) => {
         senderId: socket.user._id,
       });
 
-      const participantIds = await getUsers({
+      // Fan the message out to every participant (the sender included, so
+      // their own client receives the persisted/populated message back).
+      const participants = await getUsers({
         conversationId: data.conversationId,
       });
 
-      participantIds.forEach((id) => {
-        io.to(id).emit("newMessage", newMessage);
-      });
-
-      for (const user of participantIds) {
+      participants.forEach((user) => {
         io.to(user._id.toString()).emit("newMessage", newMessage);
-      }
+      });
     } catch (err) {
       socket.emit("errorMessage", err.message);
       console.error("Error in sendMessage socket", err);

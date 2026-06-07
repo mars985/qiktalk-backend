@@ -1,0 +1,33 @@
+# QikTalk backend.
+#
+# MongoDB runs as a SEPARATE container on a shared "mern" Docker network, so
+# several MERN apps can share one database. Create the network and start Mongo
+# once, then bring up this service:
+#
+#   docker network create mern
+#   docker run -d --name mongo --network mern \
+#     -v mongo-data:/data/db --restart unless-stopped mongo:7
+#   docker compose up --build -d
+#
+# Requires a .env file in this directory (copy from .env.example).
+
+services:
+  backend:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Reach the separately-run Mongo by its container name on the mern
+      # network. Change "mongo" to match your Mongo container's name/alias.
+      MONGO_URI: mongodb://mongo:27017/QikTalk
+      PORT: "4501"
+    ports:
+      - "4501:4501"
+    networks:
+      - mern
+
+networks:
+  # Pre-created shared network — run `docker network create mern` first.
+  mern:
+    external: true

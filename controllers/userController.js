@@ -82,12 +82,13 @@ async function getOnlineStatus(req, res) {
         .json({ success: false, message: "userId is required" });
     }
 
-    const status = await userService.getOnlineStatus({ userId });
+    // { online: boolean, lastSeen: Date | null }
+    const status = await userService.getPresence({ userId });
 
     if (!status) {
       return res
         .status(404)
-        .json({ success: false, message: "Status undefined" });
+        .json({ success: false, message: "User not found" });
     }
 
     res.json({ success: true, data: status });

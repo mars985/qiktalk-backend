@@ -1,0 +1,25 @@
+# Dependencies (reinstalled inside the image)
+node_modules
+npm-debug.log*
+
+# Secrets & local env (pass these in at runtime instead)
+.env
+.env.*
+
+# Version control & meta
+.git
+.gitignore
+
+# Docker files (not needed inside the image)
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Docs & misc
+*.md
+dist
+logs
+*.log
+.vscode
+.idea
+.DS_Store
