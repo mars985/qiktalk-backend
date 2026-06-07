@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/usermodel");
+const presence = require("./presence");
 
 async function createUser({ username, email, password }) {
   const existingEmail = await User.findOne({ email });
@@ -62,17 +63,25 @@ async function searchUsernames({ searchString, loggedInUserId }) {
   }).select("username");
 }
 
-async function setOnline({ userId }) {
-  await User.findByIdAndUpdate(userId, { lastseen: new Date(0) });
+// Record the moment a user went offline. Returns the timestamp so the caller
+// can broadcast it without a second round-trip to the database.
+async function setLastSeen({ userId }) {
+  const now = new Date();
+  await User.findByIdAndUpdate(userId, { lastseen: now });
+  return now;
 }
 
-async function setOffline({ userId }) {
-  await User.findByIdAndUpdate(userId, { lastseen: new Date() });
-}
+// Resolve a user's presence. "online" is read from the live socket registry;
+// when offline we fall back to the persisted lastseen timestamp.
+async function getPresence({ userId }) {
+  if (presence.isOnline(userId)) {
+    return { online: true, lastSeen: null };
+  }
 
-async function getOnlineStatus({ userId }) {
-  const user = await User.findById(userId);
-  return user ? (user.lastseen ? user.lastseen : "unknown") : null;
+  const user = await User.findById(userId).select("lastseen");
+  if (!user) return null;
+
+  return { online: false, lastSeen: user.lastseen ?? null };
 }
 
 module.exports = {
@@ -80,7 +89,6 @@ module.exports = {
   loginUser,
   updateUser,
   searchUsernames,
-  setOnline,
-  setOffline,
-  getOnlineStatus,
+  setLastSeen,
+  getPresence,
 };

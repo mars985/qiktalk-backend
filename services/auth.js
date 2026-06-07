@@ -49,4 +49,4 @@ function socketAuth(io) {
   });
 }
 
-module.exports = {authenticate, socketAuth};
+module.exports = { authenticate, socketAuth };

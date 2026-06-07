@@ -57,21 +57,16 @@ module.exports = (io, socket) => {
         return socket.emit("errorMessage", "Group not found");
       }
 
-      // Emit updated conversation to group members
-      const participantIds = await getUsers({
-        conversationId: data.conversationId,
-      });
+      // Notify every current member (including the newly added users) so their
+      // conversation list refreshes in real time.
+      const participants = await getUsers({ conversationId: data.groupId });
 
-      participantIds.forEach((id) => {
-        io.to(id).emit("newMessage", newMessage);
+      participants.forEach((user) => {
+        io.to(user._id.toString()).emit("newConversation", updatedGroup);
       });
-
-      for (const user of participantIds) {
-        io.to(user._id.toString()).emit("newMessage", newMessage);
-      }
     } catch (err) {
       socket.emit("errorMessage", err.message);
-      console.error("Error in addToGroup");
+      console.error("Error in addToGroup", err);
     }
   });
 };

@@ -37,7 +37,7 @@ const messageRoutes = require("./routes/messageRoutes");
 const conversationRoutes = require("./routes/conversationRoutes");
 
 app.get("/", (req, res) => {
-  res.send("hey");
+  res.send("API for QikTalk");
 });
 
 app.use("/", userRoutes);
