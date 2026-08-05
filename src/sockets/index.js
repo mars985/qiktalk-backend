@@ -1,4 +1,4 @@
-const { socketAuth } = require("../services/auth");
+const { socketAuth } = require("../middlewares/auth");
 const userSockets = require("./userSockets");
 const conversationSockets = require("./conversationSockets");
 const messageSockets = require("./messageSockets");

@@ -1,112 +1,93 @@
 const conversationService = require("../services/conversationServices");
+const { ApiResponse } = require("../utils/ApiResponse");
+const { ApiError } = require("../utils/ApiError");
+const { asyncHandler } = require("../utils/AsyncHandler");
 
-async function createDM(req, res) {
-  try {
-    const { targetUserId } = req.body;
-    const loggedInUserId = req.user._id;
+const createDM = asyncHandler(async (req, res) => {
+  const { targetUserId } = req.body;
+  const loggedInUserId = req.user._id;
 
-    const dm = await conversationService.createDM({
-      targetUserId,
-      loggedInUserId,
-    });
-    res.json({ success: true, data: dm });
-  } catch (error) {
-    console.error("Error creating DM:", error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+  const dm = await conversationService.createDM({
+    targetUserId,
+    loggedInUserId,
+  });
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, dm, "DM retrieved successfully"));
+});
+
+const createGroup = asyncHandler(async (req, res) => {
+  const { participantIds, groupName } = req.body;
+  const loggedInUserId = req.user._id;
+
+  const group = await conversationService.createGroup({
+    participantIds,
+    groupName,
+    loggedInUserId,
+  });
+
+  res
+    .status(201)
+    .json(new ApiResponse(201, group, "Group created successfully"));
+});
+
+// TODO
+const addToGroup = asyncHandler(async (req, res) => {
+  const { participantIds, groupId } = req.body;
+  const loggedInUserId = req.user._id;
+
+  const group = await conversationService.addToGroup({
+    participantIds,
+    groupId,
+    loggedInUserId,
+  });
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, group, "Users added successfully"));
+});
+
+const getConversations = asyncHandler(async (req, res) => {
+  const loggedInUserId = req.user._id;
+
+  const conversations = await conversationService.getConversations({
+    loggedInUserId,
+  });
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, conversations));
+});
+
+const getConversationUsers = asyncHandler(async (req, res) => {
+  const { conversationId } = req.params;
+  const loggedInUserId = req.user._id;
+
+  if (!conversationId) {
+    throw new ApiError(400, "Conversation ID is required");
   }
-}
 
-async function createGroup(req, res) {
-  try {
-    const { participantIds, groupName } = req.body;
-    const loggedInUserId = req.user._id;
+  const users = await conversationService.getConversationUsers({ conversationId, loggedInUserId });
 
-    const group = await conversationService.createGroup({
-      participantIds,
-      groupName,
-      loggedInUserId,
-    });
-    res.json({ success: true, data: group });
-  } catch (error) {
-    console.error("Error creating group:", error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
-  }
-}
+  res
+    .status(200)
+    .json(new ApiResponse(200, users));
+});
 
-async function addToGroup(req, res) {
-  try {
-    const { participantIds, groupId } = req.body;
-    const group = await conversationService.addToGroup({
-      participantIds,
-      groupId,
-    });
+const getConversationById = asyncHandler(async (req, res) => {
+  const { conversationId } = req.params;
+  const loggedInUserId = req.user._id;
 
-    if (!group) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Group not found" });
-    }
+  const conversation = await conversationService.getConversationById({
+    conversationId,
+    loggedInUserId,
+  });
 
-    res.json({ success: true, data: group });
-  } catch (error) {
-    console.error("Error adding to group:", error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
-  }
-}
-
-async function getConversations(req, res) {
-  try {
-    const loggedInUserId = req.user._id;
-    const conversations = await conversationService.getConversations({
-      loggedInUserId,
-    });
-
-    res.json({ success: true, data: conversations });
-  } catch (error) {
-    console.error("Error fetching conversations:", error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
-  }
-}
-
-async function getConversationUsers(req, res) {
-  try {
-    const { conversationId } = req.params;
-
-    if (!conversationId) {
-      return res.status(400).json({ message: "Conversation ID is required" });
-    }
-
-    const users = await conversationService.getUsers({ conversationId });
-
-    return res.status(200).json(users);
-  } catch (err) {
-    console.error("Error in getConversationUsers:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch conversation users",
-      error: err.message,
-    });
-  }
-}
-
-async function getConversationById(req, res) {
-  try {
-    const { conversationId } = req.params;
-    if (!conversationId) {
-      return res.status(400).json({ success: false, message: "Conversation ID is required" });
-    }
-
-    const conversation = await conversationService.getConversationById({ conversationId });
-    if (!conversation) {
-      return res.status(404).json({ success: false, message: "Conversation not found" });
-    }
-
-    res.json({ success: true, data: conversation });
-  } catch (error) {
-    console.error("Error fetching conversation:", error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
-  }
-}
+  res
+    .status(200)
+    .json(new ApiResponse(200, conversation));
+});
 
 module.exports = {
   createDM,
@@ -114,5 +95,5 @@ module.exports = {
   addToGroup,
   getConversations,
   getConversationUsers,
-  getConversationById
+  getConversationById,
 };

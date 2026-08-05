@@ -1,40 +1,54 @@
 const Message = require("../models/messagemodel");
 const Conversation = require("../models/conversationmodel");
+const mongoose = require("mongoose");
+const { ApiError } = require("../utils/ApiError");
 
-async function getMessages({ conversationId }) {
-  const conversation = await Conversation.findById(conversationId).populate({
+async function getMessages({ conversationId, loggedInUserId }) {
+  if (!conversationId)
+    throw new ApiError(400, "Missing fields");
+
+  const conversation = await Conversation.findById({
+    _id: conversationId,
+  }).populate({
     path: "messages",
     populate: {
       path: "sender",
-      select: "username _id",
+      select: "_id username",
     },
   });
 
-  if (!conversation) return null;
+  if (!conversation) {
+    throw new ApiError(404, "Conversation not found");
+  }
+
   return conversation.messages;
 }
 
-async function sendMessage({ message, conversationId, senderId }) {
-  if (!message || !conversationId || !senderId) {
-    throw new Error("Missing required fields");
+async function sendMessage({ message, conversationId, loggedInUserId }) {
+  if (!message || !conversationId || !loggedInUserId) {
+    throw new ApiError(400, "Missing required fields");
   }
 
-  const newMessage = new Message({
-    sender: senderId,
-    body: message,
+  const conversation = await Conversation.findOne({
+    _id: conversationId,
+    participants: loggedInUserId,
   });
-  await newMessage.save();
 
-  const conversation = await Conversation.findById(conversationId);
   if (!conversation) {
-    throw new Error("Conversation not found");
+    throw new ApiError(404, "Conversation not found");
   }
+
+  const newMessage = await Message.create({
+    body: message,
+    sender: loggedInUserId
+  });
 
   conversation.messages.push(newMessage._id);
   conversation.updatedAt = new Date();
-  await conversation.save();
 
+  await conversation.save();
   await newMessage.populate("sender", "_id username");
+
   return newMessage;
 }
 

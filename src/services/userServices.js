@@ -2,16 +2,24 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/usermodel");
 const presence = require("./presence");
+const { ApiError } = require("../utils/ApiError");
 
 async function createUser({ username, email, password }) {
+  if (!username || !email || !password) {
+    throw new ApiError(400, "Required fields missing");
+  }
+
   const existingEmail = await User.findOne({ email });
-  if (existingEmail) throw new Error("User already exists");
+  if (existingEmail) {
+    throw new ApiError(409, "User already exists");
+  }
 
   const existingUsername = await User.findOne({ username });
-  if (existingUsername) throw new Error("Username taken");
+  if (existingUsername) {
+    throw new ApiError(409, "Username already taken");
+  }
 
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   const createdUser = await User.create({
     username,
@@ -19,32 +27,47 @@ async function createUser({ username, email, password }) {
     password: hashedPassword,
   });
 
-  const token = jwt.sign({ email }, process.env.JWT_SECRET);
+  const token = jwt.sign(
+    { _id: createdUser._id },
+    process.env.JWT_SECRET,
+    { expiresIn: "2d" }
+  );
+
   return { user: createdUser, token };
 }
 
 async function loginUser({ email, password }) {
+  if (!email || !password) {
+    throw new ApiError(400, "Required fields missing");
+  }
   const user = await User.findOne({ email });
-  if (!user) throw new Error("User not found");
 
-  const validPassword = await bcrypt.compare(password, user.password);
-  if (!validPassword) throw new Error("Invalid password");
+  if (!user || !(await bcrypt.compare(password, user.password))) {
+    throw new ApiError(401, "Invalid email or password");
+  }
 
-  const token = jwt.sign({ email }, process.env.JWT_SECRET, {
-    expiresIn: "2d",
-  });
-  const userWithoutPassword = {
-    _id: user._id,
-    email: user.email,
-    name: user.username,
+  const token = jwt.sign(
+    { _id: user._id },
+    process.env.JWT_SECRET,
+    { expiresIn: "2d" }
+  );
+
+  return {
+    user: {
+      _id: user._id,
+      email: user.email,
+      name: user.username,
+    },
+    token,
   };
-
-  return { user: userWithoutPassword, token };
 }
 
 async function updateUser({ username, email, password }) {
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
+  if (!username || !email || !password) {
+    throw new ApiError(400, "Required fields missing");
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   const updatedUser = await User.findOneAndUpdate(
     { username, email },
@@ -52,36 +75,57 @@ async function updateUser({ username, email, password }) {
     { new: true }
   );
 
-  if (!updatedUser) throw new Error("User not found");
+  if (!updatedUser) {
+    throw new ApiError(404, "User not found");
+  }
+
   return updatedUser;
 }
 
 async function searchUsernames({ searchString, loggedInUserId }) {
+  if (!searchString || searchString.length < 3)
+    throw new ApiError(400, "Invalid search string");
+
   return User.find({
     username: { $regex: searchString, $options: "i" },
     _id: { $ne: loggedInUserId },
   }).select("username");
 }
 
-// Record the moment a user went offline. Returns the timestamp so the caller
-// can broadcast it without a second round-trip to the database.
 async function setLastSeen({ userId }) {
   const now = new Date();
-  await User.findByIdAndUpdate(userId, { lastseen: now });
+
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { lastseen: now },
+    { new: true }
+  );
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
   return now;
 }
 
-// Resolve a user's presence. "online" is read from the live socket registry;
-// when offline we fall back to the persisted lastseen timestamp.
 async function getPresence({ userId }) {
   if (presence.isOnline(userId)) {
-    return { online: true, lastSeen: null };
+    return {
+      online: true,
+      lastSeen: null,
+    };
   }
 
   const user = await User.findById(userId).select("lastseen");
-  if (!user) return null;
 
-  return { online: false, lastSeen: user.lastseen ?? null };
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  return {
+    online: false,
+    lastSeen: user.lastseen ?? null,
+  };
 }
 
 module.exports = {

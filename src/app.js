@@ -5,6 +5,7 @@ const { Server } = require("socket.io");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 require("dotenv").config();
+const { errorHandler } = require("./middlewares/errorHandler");
 
 // -------------------- App Setup --------------------
 const app = express();
@@ -43,6 +44,9 @@ app.get("/", (req, res) => {
 app.use("/", userRoutes);
 app.use("/", messageRoutes);
 app.use("/", conversationRoutes);
+
+// -------------------- Error Handler Middleware --------------------
+app.use(errorHandler);
 
 // -------------------- Sockets --------------------
 require("./sockets")(io); // pass `io` into your sockets file

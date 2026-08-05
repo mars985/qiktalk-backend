@@ -1,19 +1,20 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/usermodel");
 const cookie = require("cookie");
+const { ApiError } = require("../utils/ApiError");
 
 async function verifyUserFromToken(token) {
-  if (!token) throw new Error("No token provided");
+  if (!token) throw new ApiError(400, "No token provided");
 
   let decoded;
   try {
     decoded = jwt.verify(token, process.env.JWT_SECRET);
   } catch {
-    throw new Error("Invalid or expired token");
+    throw new ApiError(400, "Invalid or expired token");
   }
 
-  const loggedInUser = await User.findOne({ email: decoded.email });
-  if (!loggedInUser) throw new Error("User not found");
+  const loggedInUser = await User.findById(decoded._id);
+  if (!loggedInUser) throw new ApiError(400, "User not found");
 
   return loggedInUser;
 }
@@ -29,7 +30,7 @@ async function authenticate(req, res, next) {
   }
 }
 
-function socketAuth(io) {
+async function socketAuth(io) {
   io.use(async (socket, next) => {
     try {
       // Prefer handshake.auth.token (explicit from client)
@@ -44,7 +45,7 @@ function socketAuth(io) {
       socket.user = await verifyUserFromToken(token);
       next();
     } catch (err) {
-      next(new Error("Unauthorized: " + err.message));
+      next(new ApiError(400, "Unauthorized: " + err.message));
     }
   });
 }

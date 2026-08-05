@@ -1,27 +1,50 @@
 const { sendMessage } = require("../services/messageServices");
-const { getUsers } = require("../services/conversationServices");
+const { getConversationUsers } = require("../services/conversationServices");
+
+const { ApiError } = require("../utils/ApiError");
+const { ApiResponse } = require("../utils/ApiResponse");
 
 module.exports = (io, socket) => {
-  socket.on("sendMessage", async (data) => {
+  socket.on("sendMessage", async (data, callback) => {
     try {
+      const loggedInUserId = socket.user._id;
+
       const newMessage = await sendMessage({
         message: data.message,
         conversationId: data.conversationId,
-        senderId: socket.user._id,
+        loggedInUserId,
       });
 
-      // Fan the message out to every participant (the sender included, so
-      // their own client receives the persisted/populated message back).
-      const participants = await getUsers({
+      // Notify every participant (including the sender)
+      const participants = await getConversationUsers({
         conversationId: data.conversationId,
+        loggedInUserId,
       });
 
       participants.forEach((user) => {
         io.to(user._id.toString()).emit("newMessage", newMessage);
       });
+
+      callback?.(new ApiResponse(200, newMessage, "Message sent"));
     } catch (err) {
-      socket.emit("errorMessage", err.message);
-      console.error("Error in sendMessage socket", err);
+      console.error("Error in sendMessage socket:", err);
+
+      const error =
+        err instanceof ApiError
+          ? err
+          : new ApiError(500, err.message || "Internal Server Error");
+
+      callback?.({
+        success: false,
+        statusCode: error.statusCode,
+        message: error.message,
+        errors: error.errors,
+      });
+
+      socket.emit("errorMessage", {
+        statusCode: error.statusCode,
+        message: error.message,
+      });
     }
   });
 };

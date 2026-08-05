@@ -1,12 +1,18 @@
 const Conversation = require("../models/conversationmodel");
+const { ApiError } = require("../utils/ApiError");
 
 async function createDM({ targetUserId, loggedInUserId }) {
   const existingDM = await Conversation.findOne({
     type: "dm",
-    participants: { $all: [loggedInUserId, targetUserId], $size: 2 },
+    participants: {
+      $all: [loggedInUserId, targetUserId],
+      $size: 2,
+    },
   });
 
-  if (existingDM) return existingDM;
+  if (existingDM) {
+    return existingDM;
+  }
 
   return Conversation.create({
     type: "dm",
@@ -16,55 +22,96 @@ async function createDM({ targetUserId, loggedInUserId }) {
 }
 
 async function createGroup({ participantIds, groupName, loggedInUserId }) {
+  const participants = [...new Set([...participantIds, loggedInUserId])];
+
+  if (participants.length < 3) {
+    throw new ApiError(400, "A group must have at least 3 participants");
+  }
+
   return Conversation.create({
-    participants: [...participantIds, loggedInUserId],
+    participants,
     type: "group",
     groupName,
     messages: [],
   });
 }
 
-async function addToGroup({ participantIds, groupId }) {
-  const group = await Conversation.findOne({ _id: groupId, type: "group" });
-  if (!group) return null;
+async function addToGroup({ participantIds, groupId, loggedInUserId }) {
+  const group = await Conversation.findOne({
+    _id: groupId,
+    type: "group",
+  });
 
-  group.participants.push(...participantIds);
-  group.updatedAt = new Date();
-  await group.save();
-  return group;
+  if (!group) {
+    throw new ApiError(404, "Group not found");
+  }
+
+  if (!group.participants.some(id => id.toString() === loggedInUserId.toString()))
+    throw new ApiError(403, "You cannot add users to this group");
+
+  // TODO: add permissions for adding users
+
+  return Conversation.findByIdAndUpdate(
+    groupId,
+    {
+      $addToSet: {
+        participants: {
+          $each: participantIds
+        }
+      }
+    },
+    {
+      new: true
+    }
+  );
 }
 
 async function getConversations({ loggedInUserId }) {
-  return Conversation.find({
+  const conversations = await Conversation.find({
     participants: loggedInUserId,
   })
     .populate("participants", "username email")
     .populate("messages", "body updatedAt sender")
     .sort({ updatedAt: -1 });
+
+  return conversations;
 }
 
-async function getUsers({ conversationId }) {
-  try {
-    const conversation = await Conversation.findById(conversationId).populate(
-      "participants",
-      "username email avatarUrl"
-    );
+async function getConversationUsers({ conversationId, loggedInUserId }) {
+  const conversation = await Conversation.findOne({
+    _id: conversationId,
+    participants: loggedInUserId,
+  });
 
-    if (!conversation) {
-      throw new Error("Conversation not found");
-    }
-
-    return conversation.participants;
-  } catch (err) {
-    console.error("Error in getUsers:", err);
-    throw err;
+  if (!conversation) {
+    throw new ApiError(404, "Conversation not found or access denied");
   }
+
+  await conversation.populate(
+    "participants",
+    "username email avatarUrl"
+  );
+
+  return conversation.participants;
 }
 
-async function getConversationById({ conversationId }) {
-  return await Conversation.findById(conversationId)
+async function getConversationById({ conversationId, loggedInUserId }) {
+  if (!conversationId) {
+    throw new ApiError(400, "Conversation ID is required");
+  }
+  
+  const conversation = await Conversation.findOne({
+    _id: conversationId,
+    participants: loggedInUserId,
+  })
     .populate("participants", "_id username")
-    .select("-messages"); // exclude messages
+    .select("-messages");
+
+  if (!conversation) {
+    throw new ApiError(404, "Conversation not found or access denied");
+  }
+
+  return conversation;
 }
 
 module.exports = {
@@ -72,6 +119,6 @@ module.exports = {
   createGroup,
   addToGroup,
   getConversations,
-  getUsers,
-  getConversationById
+  getConversationUsers,
+  getConversationById,
 };
