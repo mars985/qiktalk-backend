@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/usermodel");
 const presence = require("./presence");
 const { ApiError } = require("../utils/ApiError");
+const { TOKEN_EXPIRY_TIME } = require("../constants/cookieOptions");
 
 function createToken({ _id }) {
   return jwt.sign(
