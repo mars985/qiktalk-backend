@@ -4,6 +4,14 @@ const User = require("../models/usermodel");
 const presence = require("./presence");
 const { ApiError } = require("../utils/ApiError");
 
+function createToken({ _id }) {
+  return jwt.sign(
+    { _id: _id },
+    process.env.JWT_SECRET,
+    { expiresIn: TOKEN_EXPIRY_TIME }
+  );
+}
+
 async function createUser({ username, email, password }) {
   if (!username || !email || !password) {
     throw new ApiError(400, "Required fields missing");
@@ -27,11 +35,7 @@ async function createUser({ username, email, password }) {
     password: hashedPassword,
   });
 
-  const token = jwt.sign(
-    { _id: createdUser._id },
-    process.env.JWT_SECRET,
-    { expiresIn: "2d" }
-  );
+  const token = createToken({ _id: createdUser._id });
 
   return { user: createdUser, token };
 }
@@ -46,11 +50,7 @@ async function loginUser({ email, password }) {
     throw new ApiError(401, "Invalid email or password");
   }
 
-  const token = jwt.sign(
-    { _id: user._id },
-    process.env.JWT_SECRET,
-    { expiresIn: "2d" }
-  );
+  const token = createToken({ _id: user._id });
 
   return {
     user: {

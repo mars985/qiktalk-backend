@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/usermodel");
 const cookie = require("cookie");
 const { ApiError } = require("../utils/ApiError");
+const { AUTH_COOKIE_NAME, authCookieOptions } = require("../constants/cookieOptions");
 
 async function verifyUserFromToken(token) {
   if (!token) throw new ApiError(400, "No token provided");
@@ -25,7 +26,7 @@ async function authenticate(req, res, next) {
     req.user = await verifyUserFromToken(token);
     next();
   } catch (err) {
-    res.clearCookie("token");
+    res.clearCookie(AUTH_COOKIE_NAME, authCookieOptions);
     res.status(401).send(err.message || "Unauthorized");
   }
 }

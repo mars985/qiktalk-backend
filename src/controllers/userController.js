@@ -2,6 +2,7 @@ const userService = require("../services/userServices");
 const { asyncHandler } = require("../utils/AsyncHandler");
 const { ApiResponse } = require("../utils/ApiResponse");
 const { ApiError } = require("../utils/ApiError");
+const { authCookieOptions, AUTH_COOKIE_NAME } = require("../constants/cookieOptions");
 
 const register = asyncHandler(async (req, res) => {
   const { username, email, password } = req.body;
@@ -12,7 +13,8 @@ const register = asyncHandler(async (req, res) => {
     password,
   });
 
-  res.cookie("token", token, { httpOnly: true });
+  res.cookie(AUTH_COOKIE_NAME, token, authCookieOptions);
+
   res
     .status(201)
     .json(new ApiResponse(201, user, "User created successfully"));
@@ -26,7 +28,7 @@ const login = asyncHandler(async (req, res) => {
     password,
   });
 
-  res.cookie("token", token, { httpOnly: true });
+  res.cookie(AUTH_COOKIE_NAME, token, authCookieOptions);
 
   res
     .status(200)
@@ -34,7 +36,7 @@ const login = asyncHandler(async (req, res) => {
 });
 
 const logout = asyncHandler(async (req, res) => {
-  res.clearCookie("token");
+  res.clearCookie(AUTH_COOKIE_NAME, authCookieOptions);
 
   res
     .status(200)
