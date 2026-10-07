@@ -1,4 +1,5 @@
 const z = require("zod");
+const { mongoIdSchema } = require("./common");
 
 const registerSchema = z.object({
     username: z
@@ -28,7 +29,7 @@ const loginSchema = z.object({
         .min(8, "Password must be at least 8 characters"),
 });
 
-const searchUsernames = z.object({
+const searchUsernamesSchema = z.object({
     searchString: z
         .string()
         .trim()
@@ -36,8 +37,13 @@ const searchUsernames = z.object({
         .max(50, "Search string cannot exceed 50 characters"),
 });
 
+const getOnlineStatusSchema = z.object({
+    userId: mongoIdSchema
+});
+
 module.exports = {
     registerSchema,
     loginSchema,
-    searchUsernames
+    searchUsernamesSchema,
+    getOnlineStatusSchema
 };

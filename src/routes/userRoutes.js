@@ -25,10 +25,15 @@ router.post("/updateUser", authenticate, userController.update);
 router.get(
     "/searchUsernames", 
     authenticate,
-    validate(userValidator.searchUsernames, "query"),
+    validate(userValidator.searchUsernamesSchema, "query"),
     userController.search
 );
 
-router.get("/getOnlineStatus/:userId", authenticate, userController.getOnlineStatus);
+router.get(
+    "/getOnlineStatus/:userId", 
+    authenticate, 
+    validate(userValidator.getOnlineStatusSchema, "params"),
+    userController.getOnlineStatus
+);
 
 module.exports = router;
