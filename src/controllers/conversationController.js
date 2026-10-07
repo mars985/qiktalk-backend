@@ -19,12 +19,10 @@ const createDM = asyncHandler(async (req, res) => {
 
 const createGroup = asyncHandler(async (req, res) => {
   const { participantIds, groupName } = req.body;
-  const loggedInUserId = req.user._id;
 
   const group = await conversationService.createGroup({
-    participantIds,
-    groupName,
-    loggedInUserId,
+    participants: participantIds,
+    groupName
   });
 
   res
@@ -63,10 +61,6 @@ const getConversations = asyncHandler(async (req, res) => {
 const getConversationUsers = asyncHandler(async (req, res) => {
   const { conversationId } = req.params;
   const loggedInUserId = req.user._id;
-
-  if (!conversationId) {
-    throw new ApiError(400, "Conversation ID is required");
-  }
 
   const users = await conversationService.getConversationUsers({ conversationId, loggedInUserId });
 

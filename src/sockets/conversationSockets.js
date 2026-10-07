@@ -7,37 +7,51 @@ const {
 
 const { ApiError } = require("../utils/ApiError");
 const { ApiResponse } = require("../utils/ApiResponse");
+const { validateData } = require("../middlewares/validate");
+const { createDMSchema, createGroupSchema } = require("../validators/conversationValidator");
 
 module.exports = (io, socket) => {
   socket.on("createConversation", async (data, callback) => {
     try {
-      let conversation, participantIds;
+      let conversation, participantIds, result;
 
       switch (data.conversationType) {
-        case "dm":
+        case "dm": {
+          result = validateData(createDMSchema, data);
+
+          if (!result.success) {
+            throw new ApiError(400, "Validation failed", result.error.issues);
+          }
+
           conversation = await createDM({
-            targetUserId: data.targetUserId,
+            targetUserId: result.data.targetUserId,
             loggedInUserId: socket.user._id,
           });
 
-          participantIds = [
-            socket.user._id.toString(),
-            data.targetUserId.toString(),
-          ];
+          participantIds = conversation.participants.map((id) => id.toString());
           break;
+        }
 
-        case "group":
+        case "group": {
+          const validationData = {
+            ...data,
+            loggedInUserId: socket.user._id.toString(),
+          };
+
+          result = validateData(createGroupSchema, validationData);
+
+          if (!result.success) {
+            throw new ApiError(400, "Validation failed", result.error.issues);
+          }
+
           conversation = await createGroup({
-            participantIds: data.participantIds,
-            groupName: data.groupName,
-            loggedInUserId: socket.user._id,
+            participants: result.data.participantIds,
+            groupName: result.data.groupName
           });
 
-          participantIds = [
-            ...data.participantIds.map((id) => id.toString()),
-            socket.user._id.toString(),
-          ];
+          participantIds = conversation.participants.map((id) => id.toString());
           break;
+        }
 
         default:
           throw new ApiError(400, "Invalid conversation type");

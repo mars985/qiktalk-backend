@@ -21,13 +21,7 @@ async function createDM({ targetUserId, loggedInUserId }) {
   });
 }
 
-async function createGroup({ participantIds, groupName, loggedInUserId }) {
-  const participants = [...new Set([...participantIds, loggedInUserId])];
-
-  if (participants.length < 3) {
-    throw new ApiError(400, "A group must have at least 3 participants");
-  }
-
+async function createGroup({ participants, groupName }) {
   return Conversation.create({
     participants,
     type: "group",
@@ -96,10 +90,6 @@ async function getConversationUsers({ conversationId, loggedInUserId }) {
 }
 
 async function getConversationById({ conversationId, loggedInUserId }) {
-  if (!conversationId) {
-    throw new ApiError(400, "Conversation ID is required");
-  }
-  
   const conversation = await Conversation.findOne({
     _id: conversationId,
     participants: loggedInUserId,
