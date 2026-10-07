@@ -2,9 +2,8 @@ const AUTH_COOKIE_NAME = "token";
 
 const authCookieOptions = {
   httpOnly: true,
-  secure: true,
-  sameSite: "none",
-  partitioned: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
 };
 
 const TOKEN_EXPIRY_TIME = "2d";

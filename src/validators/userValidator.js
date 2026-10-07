@@ -28,7 +28,16 @@ const loginSchema = z.object({
         .min(8, "Password must be at least 8 characters"),
 });
 
+const searchUsernames = z.object({
+    searchString: z
+        .string()
+        .trim()
+        .min(3, "Search string must be at least 3 characters")
+        .max(50, "Search string cannot exceed 50 characters"),
+});
+
 module.exports = {
     registerSchema,
-    loginSchema
-}
+    loginSchema,
+    searchUsernames
+};
