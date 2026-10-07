@@ -1,6 +1,5 @@
 const Message = require("../models/messagemodel");
 const Conversation = require("../models/conversationmodel");
-const mongoose = require("mongoose");
 const { ApiError } = require("../utils/ApiError");
 
 async function getMessages({ conversationId, loggedInUserId }) {

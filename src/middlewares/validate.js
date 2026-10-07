@@ -2,7 +2,7 @@ const { ApiError } = require("../utils/ApiError");
 
 const validate = (schema, source = "body") => {
     return (req, res, next) => {
-        const result = schema.safeParse(req[source]);
+        const result = validateData(schema, req[source]);
 
         if (!result.success) {
             return next(
@@ -15,4 +15,6 @@ const validate = (schema, source = "body") => {
     };
 }
 
-module.exports = { validate };
+const validateData = (schema, data) => result = schema.safeParse(data);
+
+module.exports = { validate, validateData };
