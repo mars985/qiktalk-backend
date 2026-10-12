@@ -1,4 +1,4 @@
-const Conversation = require("../models/conversationmodel");
+const Conversation = require("../models/conversation.model");
 const { ApiError } = require("../utils/ApiError");
 
 async function createDM({ targetUserId, loggedInUserId }) {

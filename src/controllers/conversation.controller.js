@@ -1,4 +1,4 @@
-const conversationService = require("../services/conversationServices");
+const conversationService = require("../services/conversation.service");
 const { ApiResponse } = require("../utils/ApiResponse");
 const { ApiError } = require("../utils/ApiError");
 const { asyncHandler } = require("../utils/AsyncHandler");

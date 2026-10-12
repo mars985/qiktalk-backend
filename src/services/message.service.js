@@ -1,5 +1,5 @@
-const Message = require("../models/messagemodel");
-const Conversation = require("../models/conversationmodel");
+const Message = require("../models/message.model");
+const Conversation = require("../models/conversation.model");
 const { ApiError } = require("../utils/ApiError");
 
 async function getMessages({ conversationId, loggedInUserId }) {

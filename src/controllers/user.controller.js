@@ -1,8 +1,8 @@
-const userService = require("../services/userServices");
+const userService = require("../services/user.service");
 const { asyncHandler } = require("../utils/AsyncHandler");
 const { ApiResponse } = require("../utils/ApiResponse");
 const { ApiError } = require("../utils/ApiError");
-const { authCookieOptions, AUTH_COOKIE_NAME } = require("../constants/cookieOptions");
+const { authCookieOptions, AUTH_COOKIE_NAME } = require("../constants/cookie.constants");
 
 const register = asyncHandler(async (req, res) => {
   const { username, email, password } = req.body;

@@ -5,7 +5,7 @@ const {
     MAX_GROUP_NAME_LENGTH,
     MIN_GROUP_PARTICIPANTS,
     MAX_GROUP_PARTICIPANTS
-} = require("../constants/conversationConstants");
+} = require("../constants/conversation.constants");
 
 const createDMSchema = z.object({
     targetUserId: mongoIdSchema

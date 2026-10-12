@@ -1,7 +1,7 @@
-const { socketAuth } = require("../middlewares/auth");
-const userSockets = require("./userSockets");
-const conversationSockets = require("./conversationSockets");
-const messageSockets = require("./messageSockets");
+const { socketAuth } = require("../middlewares/auth.middleware");
+const userSockets = require("./user.socket");
+const conversationSockets = require("./conversation.socket");
+const messageSockets = require("./message.socket");
 
 module.exports = (io) => {
   socketAuth(io);

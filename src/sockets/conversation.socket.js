@@ -3,12 +3,12 @@ const {
   createGroup,
   addToGroup,
   getUsers,
-} = require("../services/conversationServices");
+} = require("../services/conversation.service");
 
 const { ApiError } = require("../utils/ApiError");
 const { ApiResponse } = require("../utils/ApiResponse");
-const { validateData } = require("../middlewares/validate");
-const { createDMSchema, createGroupSchema } = require("../validators/conversationValidator");
+const { validateData } = require("../middlewares/validate.middleware");
+const { createDMSchema, createGroupSchema } = require("../validators/conversation.validator");
 
 module.exports = (io, socket) => {
   socket.on("createConversation", async (data, callback) => {

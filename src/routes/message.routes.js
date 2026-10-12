@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
 
-const { authenticate } = require("../middlewares/auth");
-const messageController = require("../controllers/messageController");
-const { validate } = require("../middlewares/validate");
-const messageValidator = require("../validators/messageValidator");
+const { authenticate } = require("../middlewares/auth.middleware");
+const messageController = require("../controllers/message.controller");
+const { validate } = require("../middlewares/validate.middleware");
+const messageValidator = require("../validators/message.validator");
 
 router.get(
     "/messages/:conversationId",

@@ -1,9 +1,9 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const User = require("../models/usermodel");
-const presence = require("./presence");
+const User = require("../models/user.model");
+const presence = require("./presence.service");
 const { ApiError } = require("../utils/ApiError");
-const { TOKEN_EXPIRY_TIME } = require("../constants/cookieOptions");
+const { TOKEN_EXPIRY_TIME } = require("../constants/cookie.constants");
 
 function createToken({ _id }) {
   return jwt.sign(

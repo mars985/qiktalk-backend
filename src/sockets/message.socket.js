@@ -1,10 +1,10 @@
-const { sendMessage } = require("../services/messageServices");
-const { getConversationUsers } = require("../services/conversationServices");
+const { sendMessage } = require("../services/message.service");
+const { getConversationUsers } = require("../services/conversation.service");
 
 const { ApiError } = require("../utils/ApiError");
 const { ApiResponse } = require("../utils/ApiResponse");
-const { validateData } = require("../middlewares/validate");
-const { sendMessageSchema } = require("../validators/messageValidator");
+const { validateData } = require("../middlewares/validate.middleware");
+const { sendMessageSchema } = require("../validators/message.validator");
 
 module.exports = (io, socket) => {
   socket.on("sendMessage", async (data, callback) => {

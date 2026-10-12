@@ -1,5 +1,5 @@
-const presence = require("../services/presence");
-const { setLastSeen } = require("../services/userServices");
+const presence = require("../services/presence.service");
+const { setLastSeen } = require("../services/user.service");
 
 module.exports = (io, socket) => {
   const userId = socket.user._id.toString();

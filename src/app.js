@@ -5,7 +5,7 @@ const { Server } = require("socket.io");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 require("dotenv").config();
-const { errorHandler } = require("./middlewares/errorHandler");
+const { errorHandler } = require("./middlewares/error.middleware");
 
 // -------------------- App Setup --------------------
 const app = express();
@@ -33,9 +33,9 @@ const io = new Server(server, {
 });
 
 // -------------------- Routes --------------------
-const userRoutes = require("./routes/userRoutes");
-const messageRoutes = require("./routes/messageRoutes");
-const conversationRoutes = require("./routes/conversationRoutes");
+const userRoutes = require("./routes/user.routes");
+const messageRoutes = require("./routes/message.routes");
+const conversationRoutes = require("./routes/conversation.routes");
 
 app.get("/", (req, res) => {
   res.send("API for QikTalk");

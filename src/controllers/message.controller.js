@@ -1,4 +1,4 @@
-const messageService = require("../services/messageServices");
+const messageService = require("../services/message.service");
 const { asyncHandler } = require("../utils/AsyncHandler");
 const { ApiResponse } = require("../utils/ApiResponse");
 const { ApiError } = require("../utils/ApiError");
