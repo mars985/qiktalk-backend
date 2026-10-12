@@ -32,12 +32,13 @@ const createGroup = asyncHandler(async (req, res) => {
 
 // TODO
 const addToGroup = asyncHandler(async (req, res) => {
-  const { participantIds, groupId } = req.body;
+  const { participantIds } = req.body;
+  const { conversationId } = req.params;
   const loggedInUserId = req.user._id;
 
   const group = await conversationService.addToGroup({
     participantIds,
-    groupId,
+    conversationId,
     loggedInUserId,
   });
 

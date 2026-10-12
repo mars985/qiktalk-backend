@@ -1,50 +1,56 @@
 const express = require("express");
-const router = express.Router();
 
 const { authenticate } = require("../middlewares/auth.middleware");
 const conversationController = require("../controllers/conversation.controller");
 const conversationValidator = require("../validators/conversation.validator");
 const { validate } = require("../middlewares/validate.middleware");
 
+const router = express.Router();
+const conversationIdRoutes = express.Router({ mergeParams: true });
+
+// route => /conversations/
+
+router.use(authenticate);
+
+router.get(
+    "/",
+    conversationController.getConversations
+);
+
 router.post(
     "/createDM",
-    authenticate,
     validate(conversationValidator.createDMSchema),
     conversationController.createDM
 );
 
 router.post(
     "/createGroup",
-    authenticate,
     validate(conversationValidator.createGroupSchema),
     conversationController.createGroup
 );
 
-router.post(
-    "/addToGroup",
-    authenticate,
-    validate(conversationValidator.addToGroupSchema),
-    conversationController.addToGroup
+// route => /conversations/:conversationId/
+
+conversationIdRoutes.use(
+    validate(conversationValidator.conversationIdSchema, "params")
 );
 
-router.get(
-    "/getConversations",
-    authenticate,
-    conversationController.getConversations
+conversationIdRoutes.get(
+    "/",
+    conversationController.getConversationById
 );
 
-router.get(
-    "/:conversationId/user",
-    authenticate,
-    validate(conversationValidator.getConversationUsersSchema, "params"),
+conversationIdRoutes.get(
+    "/users",
     conversationController.getConversationUsers
 );
 
-router.get(
-    "/:conversationId",
-    authenticate,
-    validate(conversationValidator.getConversationByIdSchema, "params"),
-    conversationController.getConversationById
+conversationIdRoutes.post(
+    "/addToGroup",
+    validate(conversationValidator.addToGroupSchema, "body"),
+    conversationController.addToGroup
 );
+
+router.use("/:conversationId", conversationIdRoutes);
 
 module.exports = router;

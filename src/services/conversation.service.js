@@ -30,9 +30,9 @@ async function createGroup({ participants, groupName }) {
   });
 }
 
-async function addToGroup({ participantIds, groupId, loggedInUserId }) {
+async function addToGroup({ participantIds, conversationId, loggedInUserId }) {
   const group = await Conversation.findOne({
-    _id: groupId,
+    _id: conversationId,
     type: "group",
   });
 
@@ -46,7 +46,7 @@ async function addToGroup({ participantIds, groupId, loggedInUserId }) {
   // TODO: add permissions for adding users
 
   return Conversation.findByIdAndUpdate(
-    groupId,
+    conversationId,
     {
       $addToSet: {
         participants: {

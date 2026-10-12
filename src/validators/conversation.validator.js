@@ -50,18 +50,12 @@ const createGroupSchema = z
     );
 
 const addToGroupSchema = z.object({
-    participants: z
+    participantIds: z
         .array(mongoIdSchema)
         .min(1, "You must add at least 1 participant to the group"),
-
-    groupId: mongoIdSchema
 });
 
-const getConversationUsersSchema = z.object({
-    conversationId: mongoIdSchema
-});
-
-const getConversationByIdSchema = z.object({
+const conversationIdSchema = z.object({
     conversationId: mongoIdSchema
 });
 
@@ -69,6 +63,5 @@ module.exports = {
     createDMSchema,
     createGroupSchema,
     addToGroupSchema,
-    getConversationUsersSchema,
-    getConversationByIdSchema
+    conversationIdSchema,
 };
