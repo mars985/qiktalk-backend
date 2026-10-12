@@ -1,5 +1,6 @@
 const z = require("zod");
 const { mongoIdSchema } = require("./common");
+const { minLengthMessage, maxLengthMessage } = require("./messages");
 const {
     MIN_GROUP_NAME_LENGTH,
     MAX_GROUP_NAME_LENGTH,
@@ -20,8 +21,8 @@ const createGroupSchema = z
         groupName: z
             .string()
             .trim()
-            .min(MIN_GROUP_NAME_LENGTH, `Group name must have at least ${MIN_GROUP_NAME_LENGTH} characters`)
-            .max(MAX_GROUP_NAME_LENGTH, `Group name must not exceed ${MAX_GROUP_NAME_LENGTH} characters`)
+            .min(MIN_GROUP_NAME_LENGTH, minLengthMessage("Group name", MIN_GROUP_NAME_LENGTH))
+            .max(MAX_GROUP_NAME_LENGTH, maxLengthMessage("Group name", MAX_GROUP_NAME_LENGTH))
     })
     .transform((data) => {
         const uniqueParticipants = Array.from(
