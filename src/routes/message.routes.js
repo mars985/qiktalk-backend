@@ -6,18 +6,17 @@ const messageController = require("../controllers/message.controller");
 const { validate } = require("../middlewares/validate.middleware");
 const messageValidator = require("../validators/message.validator");
 
-router.get(
-    "/messages/:conversationId",
-    authenticate,
-    validate(messageValidator.getMessagesSchema, "params"),
-    messageController.getMessages
+/*
+TODO:
+
+router.put(
+    "/editMessage"
 );
 
-router.post(
-    "/sendMessage",
-    authenticate,
-    validate(messageValidator.sendMessageSchema),
-    messageController.sendMessage
+router.delete(
+    "/deleteMessage"
 );
+
+*/
 
 module.exports = router;

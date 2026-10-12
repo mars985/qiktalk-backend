@@ -18,7 +18,8 @@ const getMessages = asyncHandler(async (req, res) => {
 });
 
 const sendMessage = asyncHandler(async (req, res) => {
-  const { message, conversationId } = req.body;
+  const { message } = req.body;
+  const { conversationId } = req.params;
   const loggedInUserId = req.user._id;
 
   const newMessage = await messageService.sendMessage({

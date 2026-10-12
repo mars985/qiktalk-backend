@@ -1,12 +1,17 @@
 const express = require("express");
 
 const { authenticate } = require("../middlewares/auth.middleware");
+const { validate } = require("../middlewares/validate.middleware");
+
 const conversationController = require("../controllers/conversation.controller");
 const conversationValidator = require("../validators/conversation.validator");
-const { validate } = require("../middlewares/validate.middleware");
+
+const messageController = require("../controllers/message.controller");
+const messageValidator = require("../validators/message.validator");
 
 const router = express.Router();
 const conversationIdRoutes = express.Router({ mergeParams: true });
+const messageRoutes = express.Router({ mergeParams: true });
 
 // route => /conversations/
 
@@ -19,13 +24,13 @@ router.get(
 
 router.post(
     "/createDM",
-    validate(conversationValidator.createDMSchema),
+    validate(conversationValidator.createDMSchema, "body"),
     conversationController.createDM
 );
 
 router.post(
     "/createGroup",
-    validate(conversationValidator.createGroupSchema),
+    validate(conversationValidator.createGroupSchema, "body"),
     conversationController.createGroup
 );
 
@@ -51,6 +56,20 @@ conversationIdRoutes.post(
     conversationController.addToGroup
 );
 
+// route => /conversations/:conversationId/messages/
+
+messageRoutes.get(
+    "/",
+    messageController.getMessages
+);
+
+messageRoutes.post(
+    "/send",
+    validate(messageValidator.sendMessageSchema, "body"),
+    messageController.sendMessage
+);
+
+conversationIdRoutes.use("/messages", messageRoutes);
 router.use("/:conversationId", conversationIdRoutes);
 
 module.exports = router;
