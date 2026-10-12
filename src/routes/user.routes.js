@@ -7,7 +7,7 @@ const userController = require("../controllers/user.controller");
 const userValidator = require("../validators/user.validator");
 
 router.post(
-    "/createUser",
+    "/register",
     validate(userValidator.registerSchema),
     userController.register
 );
@@ -18,20 +18,32 @@ router.post(
     userController.login
 );
 
-router.get("/logout", authenticate, userController.logout);
-router.get("/verify", authenticate, userController.verify);
-router.post("/updateUser", authenticate, userController.update);
+router.post(
+    "/logout",
+    authenticate,
+    userController.logout
+);
+
+router.get("/verify",
+    authenticate,
+    userController.verify
+);
+
+router.post("/updateUser",
+    authenticate,
+    userController.update
+);
 
 router.get(
-    "/searchUsernames", 
+    "/searchUsernames",
     authenticate,
     validate(userValidator.searchUsernamesSchema, "query"),
     userController.search
 );
 
 router.get(
-    "/getOnlineStatus/:userId", 
-    authenticate, 
+    "/getOnlineStatus/:userId",
+    authenticate,
     validate(userValidator.getOnlineStatusSchema, "params"),
     userController.getOnlineStatus
 );

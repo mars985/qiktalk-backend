@@ -41,9 +41,9 @@ app.get("/", (req, res) => {
   res.send("API for QikTalk");
 });
 
-app.use("/", userRoutes);
-app.use("/", messageRoutes);
-app.use("/", conversationRoutes);
+app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/messages", messageRoutes);
+app.use("/api/v1/conversations", conversationRoutes);
 
 // -------------------- Error Handler Middleware --------------------
 app.use(errorHandler);
