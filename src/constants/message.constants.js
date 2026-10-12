@@ -1,0 +1,7 @@
+const MIN_MESSAGE_LENGTH = 1;
+const MAX_MESSAGE_LENGTH = 1024;
+
+module.exports = {
+    MIN_MESSAGE_LENGTH,
+    MAX_MESSAGE_LENGTH,
+};
