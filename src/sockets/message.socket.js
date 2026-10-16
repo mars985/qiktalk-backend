@@ -6,6 +6,7 @@ const { getConversationUsers } = require("../services/conversation.service");
 
 const { ApiError } = require("../utils/ApiError");
 const { ApiResponse } = require("../utils/ApiResponse");
+const { handleSocketError } = require("../utils/handleSocketError");
 
 module.exports = (io, socket) => {
   socket.on("sendMessage", async (data, callback) => {
@@ -35,23 +36,7 @@ module.exports = (io, socket) => {
       callback?.(new ApiResponse(200, newMessage, "Message sent"));
     } catch (err) {
       console.error("Error in sendMessage socket:", err);
-
-      const error =
-        err instanceof ApiError
-          ? err
-          : new ApiError(500, err.message || "Internal Server Error");
-
-      callback?.({
-        success: false,
-        statusCode: error.statusCode,
-        message: error.message,
-        errors: error.errors,
-      });
-
-      socket.emit("errorMessage", {
-        statusCode: error.statusCode,
-        message: error.message,
-      });
+      handleSocketError(err, callback);
     }
   });
 };

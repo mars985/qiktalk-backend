@@ -7,75 +7,57 @@ const {
 
 const { ApiError } = require("../utils/ApiError");
 const { ApiResponse } = require("../utils/ApiResponse");
+const { handleSocketError } = require("../utils/handleSocketError");
 const { validateData } = require("../middlewares/validate.middleware");
 const { createDMSchema, createGroupSchema } = require("../validators/conversation.validator");
 
 module.exports = (io, socket) => {
-  socket.on("createConversation", async (data, callback) => {
+  socket.on("createDM", async (data, callback) => {
     try {
-      let conversation, participantIds, result;
-
-      switch (data.conversationType) {
-        case "dm": {
-          result = validateData(createDMSchema, data);
-
-          if (!result.success) {
-            throw new ApiError(400, "Validation failed", result.error.issues);
-          }
-
-          conversation = await createDM({
-            targetUserId: result.data.targetUserId,
-            loggedInUserId: socket.user._id,
-          });
-
-          participantIds = conversation.participants.map((id) => id.toString());
-          break;
-        }
-
-        case "group": {
-          const validationData = {
-            ...data,
-            loggedInUserId: socket.user._id.toString(),
-          };
-
-          result = validateData(createGroupSchema, validationData);
-
-          if (!result.success) {
-            throw new ApiError(400, "Validation failed", result.error.issues);
-          }
-
-          conversation = await createGroup({
-            participants: result.data.participantIds,
-            groupName: result.data.groupName
-          });
-
-          participantIds = conversation.participants.map((id) => id.toString());
-          break;
-        }
-
-        default:
-          throw new ApiError(400, "Invalid conversation type");
+      const result = validateData(createDMSchema, data);
+      if (!result.success) {
+        throw new ApiError(400, "Validation failed", result.error.issues);
       }
 
-      participantIds.forEach((id) => {
-        io.to(id).emit("newConversation", conversation);
+      const conversation = await createDM({
+        targetUserId: result.data.targetUserId,
+        loggedInUserId: socket.user._id,
       });
 
-      callback?.(new ApiResponse(200, conversation, "Conversation created"));
+      conversation.participants.forEach((id) => {
+        io.to(id.toString()).emit("newConversation", conversation);
+      });
+
+      callback?.(new ApiResponse(200, conversation, "DM created"));
     } catch (err) {
-      console.error("Error in createConversation socket:", err);
+      handleSocketError(err, callback);
+    }
+  });
 
-      const error =
-        err instanceof ApiError
-          ? err
-          : new ApiError(500, err.message || "Internal Server Error");
+  socket.on("createGroup", async (data, callback) => {
+    try {
+      const validationData = {
+        ...data,
+        loggedInUserId: socket.user._id.toString(),
+      };
 
-      callback?.({
-        success: false,
-        statusCode: error.statusCode,
-        message: error.message,
-        errors: error.errors,
+      const result = validateData(createGroupSchema, validationData);
+      if (!result.success) {
+        throw new ApiError(400, "Validation failed", result.error.issues);
+      }
+
+      const conversation = await createGroup({
+        participants: result.data.participantIds,
+        groupName: result.data.groupName
       });
+
+      conversation.participants.forEach((id) => {
+        io.to(id.toString()).emit("newConversation", conversation);
+      });
+
+      callback?.(new ApiResponse(200, conversation, "Group created"));
+    } catch (err) {
+      handleSocketError(err, callback);
     }
   });
 
@@ -97,23 +79,7 @@ module.exports = (io, socket) => {
       callback?.(new ApiResponse(200, updatedGroup, "Users added to group"));
     } catch (err) {
       console.error("Error in addToGroup socket:", err);
-
-      const error =
-        err instanceof ApiError
-          ? err
-          : new ApiError(500, err.message || "Internal Server Error");
-
-      callback?.({
-        success: false,
-        statusCode: error.statusCode,
-        message: error.message,
-        errors: error.errors,
-      });
-
-      socket.emit("errorMessage", {
-        statusCode: error.statusCode,
-        message: error.message,
-      });
+      handleSocketError(err, callback);
     }
   });
 };

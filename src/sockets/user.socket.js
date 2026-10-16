@@ -6,7 +6,6 @@ module.exports = (io, socket) => {
 
   socket.join(userId);
 
-  // If it's the user's first live socket, they just came online
   if (presence.addConnection(userId)) {
     io.emit("presence:update", { userId, online: true });
   }
@@ -22,7 +21,6 @@ module.exports = (io, socket) => {
   });
 
   socket.on("disconnect", async () => {
-    // Only flip to offline once the user's LAST socket disconnects.
     if (presence.removeConnection(userId)) {
       const lastSeen = await setLastSeen({ userId });
       io.emit("presence:update", { userId, online: false, lastSeen });
