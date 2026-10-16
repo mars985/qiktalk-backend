@@ -30,7 +30,10 @@ module.exports = (io, socket) => {
       });
 
       participants.forEach((user) => {
-        io.to(user._id.toString()).emit("newMessage", newMessage);
+        io.to(user._id.toString()).emit("newMessage", {
+          message: newMessage,
+          conversationId: result.data.conversationId,
+        });
       });
 
       callback?.(new ApiResponse(200, newMessage, "Message sent"));

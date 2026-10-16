@@ -27,10 +27,6 @@ module.exports = (io, socket) => {
         loggedInUserId: socket.user._id,
       });
 
-      conversation.participants.forEach((id) => {
-        io.to(id.toString()).emit("newConversation", conversation);
-      });
-
       callback?.(new ApiResponse(200, conversation, "DM created"));
     } catch (err) {
       handleSocketError(err, callback);
@@ -55,7 +51,7 @@ module.exports = (io, socket) => {
       });
 
       conversation.participants.forEach((id) => {
-        io.to(id.toString()).emit("newConversation", conversation);
+        io.to(id.toString()).emit("newGroup", conversation);
       });
 
       callback?.(new ApiResponse(200, conversation, "Group created"));
@@ -76,7 +72,7 @@ module.exports = (io, socket) => {
       });
 
       participants.forEach((user) => {
-        io.to(user._id.toString()).emit("newConversation", updatedGroup);
+        io.to(user._id.toString()).emit("newGroup", updatedGroup);
       });
 
       callback?.(new ApiResponse(200, updatedGroup, "Users added to group"));
