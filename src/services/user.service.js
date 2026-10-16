@@ -6,11 +6,9 @@ const { ApiError } = require("../utils/ApiError");
 const { TOKEN_EXPIRY_TIME } = require("../constants/cookie.constants");
 
 function createToken({ _id }) {
-  return jwt.sign(
-    { _id: _id },
-    process.env.JWT_SECRET,
-    { expiresIn: TOKEN_EXPIRY_TIME }
-  );
+  return jwt.sign({ _id: _id }, process.env.JWT_SECRET, {
+    expiresIn: TOKEN_EXPIRY_TIME,
+  });
 }
 
 async function createUser({ username, email, password }) {
@@ -73,7 +71,7 @@ async function updateUser({ username, email, password }) {
   const updatedUser = await User.findOneAndUpdate(
     { username, email },
     { password: hashedPassword },
-    { new: true }
+    { new: true },
   );
 
   if (!updatedUser) {
@@ -99,7 +97,7 @@ async function setLastSeen({ userId }) {
   const user = await User.findByIdAndUpdate(
     userId,
     { lastseen: now },
-    { new: true }
+    { new: true },
   );
 
   if (!user) {

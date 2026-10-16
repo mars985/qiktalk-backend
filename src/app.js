@@ -15,7 +15,7 @@ app.use(
   cors({
     origin: process.env.CORS_ORIGIN,
     credentials: true,
-  })
+  }),
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -57,7 +57,7 @@ const startServer = async () => {
   try {
     await connectDb();
     server.listen(process.env.PORT, () =>
-      console.log("Listening on port " + process.env.PORT)
+      console.log("Listening on port " + process.env.PORT),
     );
   } catch (error) {
     console.error(error);

@@ -9,12 +9,10 @@ const getMessages = asyncHandler(async (req, res) => {
 
   const messages = await messageService.getMessages({
     conversationId,
-    loggedInUserId
+    loggedInUserId,
   });
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, messages));
+  res.status(200).json(new ApiResponse(200, messages));
 });
 
 const sendMessage = asyncHandler(async (req, res) => {

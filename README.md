@@ -21,14 +21,14 @@ and **JWT** auth stored in an httpOnly cookie.
 
 ## Tech stack
 
-| Concern        | Choice                          |
-| -------------- | ------------------------------- |
-| Runtime        | Node.js                         |
-| HTTP framework | Express 5                       |
-| Realtime       | Socket.IO 4                     |
-| Database       | MongoDB via Mongoose 8          |
-| Auth           | JWT (`jsonwebtoken`) + bcrypt   |
-| Cookies        | `cookie-parser` / `cookie`      |
+| Concern        | Choice                        |
+| -------------- | ----------------------------- |
+| Runtime        | Node.js                       |
+| HTTP framework | Express 5                     |
+| Realtime       | Socket.IO 4                   |
+| Database       | MongoDB via Mongoose 8        |
+| Auth           | JWT (`jsonwebtoken`) + bcrypt |
+| Cookies        | `cookie-parser` / `cookie`    |
 
 ---
 
@@ -82,12 +82,12 @@ Copy the example file and fill in your values:
 cp .env.example .env
 ```
 
-| Variable      | Description                                                        | Example                              |
-| ------------- | ------------------------------------------------------------------ | ------------------------------------ |
-| `CORS_ORIGIN` | Frontend origin allowed for CORS **and** Socket.IO.                | `http://localhost:5173`              |
-| `MONGO_URI`   | MongoDB connection string (local `mongod` or Atlas).               | `mongodb://127.0.0.1:27017/QikTalk`  |
-| `PORT`        | Port the server listens on.                                        | `4501`                               |
-| `JWT_SECRET`  | Secret used to sign JWTs (use a long random string in production). | `a-long-random-string`               |
+| Variable      | Description                                                        | Example                             |
+| ------------- | ------------------------------------------------------------------ | ----------------------------------- |
+| `CORS_ORIGIN` | Frontend origin allowed for CORS **and** Socket.IO.                | `http://localhost:5173`             |
+| `MONGO_URI`   | MongoDB connection string (local `mongod` or Atlas).               | `mongodb://127.0.0.1:27017/QikTalk` |
+| `PORT`        | Port the server listens on.                                        | `4501`                              |
+| `JWT_SECRET`  | Secret used to sign JWTs (use a long random string in production). | `a-long-random-string`              |
 
 ### 3. Run
 
@@ -196,33 +196,33 @@ All protected routes require the auth cookie. Responses use the shape
 
 ### Users
 
-| Method | Path                       | Auth | Body / Params                       | Description                              |
-| ------ | -------------------------- | ---- | ----------------------------------- | ---------------------------------------- |
-| POST   | `/createUser`              | —    | `{ username, email, password }`     | Register; sets the token cookie.         |
-| POST   | `/login`                   | —    | `{ email, password }`               | Login; sets the token cookie.            |
-| GET    | `/logout`                  | ✅    | —                                   | Clears the token cookie.                 |
-| GET    | `/verify`                  | ✅    | —                                   | Returns the current user.                |
-| POST   | `/updateUser`              | ✅    | `{ username, email, password }`     | Update password for a user.              |
-| GET    | `/searchUsernames`         | ✅    | `?searchString=`                    | Username search (excludes self).         |
-| GET    | `/getOnlineStatus/:userId` | ✅    | `:userId`                           | `{ online, lastSeen }` for a user.       |
+| Method | Path                       | Auth | Body / Params                   | Description                        |
+| ------ | -------------------------- | ---- | ------------------------------- | ---------------------------------- |
+| POST   | `/createUser`              | —    | `{ username, email, password }` | Register; sets the token cookie.   |
+| POST   | `/login`                   | —    | `{ email, password }`           | Login; sets the token cookie.      |
+| GET    | `/logout`                  | ✅   | —                               | Clears the token cookie.           |
+| GET    | `/verify`                  | ✅   | —                               | Returns the current user.          |
+| POST   | `/updateUser`              | ✅   | `{ username, email, password }` | Update password for a user.        |
+| GET    | `/searchUsernames`         | ✅   | `?searchString=`                | Username search (excludes self).   |
+| GET    | `/getOnlineStatus/:userId` | ✅   | `:userId`                       | `{ online, lastSeen }` for a user. |
 
 ### Conversations
 
-| Method | Path                     | Auth | Body / Params                    | Description                          |
-| ------ | ------------------------ | ---- | -------------------------------- | ------------------------------------ |
-| POST   | `/createDM`              | ✅    | `{ targetUserId }`               | Create/reuse a DM.                   |
-| POST   | `/createGroup`           | ✅    | `{ participantIds, groupName }`  | Create a group.                      |
-| POST   | `/addToGroup`            | ✅    | `{ participantIds, groupId }`    | Add members to a group.              |
-| GET    | `/getConversations`      | ✅    | —                                | Conversations for the current user. |
-| GET    | `/:conversationId/user`  | ✅    | `:conversationId`                | Participants of a conversation.      |
-| GET    | `/:conversationId`       | ✅    | `:conversationId`                | Conversation details (no messages). |
+| Method | Path                    | Auth | Body / Params                   | Description                         |
+| ------ | ----------------------- | ---- | ------------------------------- | ----------------------------------- |
+| POST   | `/createDM`             | ✅   | `{ targetUserId }`              | Create/reuse a DM.                  |
+| POST   | `/createGroup`          | ✅   | `{ participantIds, groupName }` | Create a group.                     |
+| POST   | `/addToGroup`           | ✅   | `{ participantIds, groupId }`   | Add members to a group.             |
+| GET    | `/getConversations`     | ✅   | —                               | Conversations for the current user. |
+| GET    | `/:conversationId/user` | ✅   | `:conversationId`               | Participants of a conversation.     |
+| GET    | `/:conversationId`      | ✅   | `:conversationId`               | Conversation details (no messages). |
 
 ### Messages
 
-| Method | Path                       | Auth | Body / Params                       | Description                       |
-| ------ | -------------------------- | ---- | ----------------------------------- | --------------------------------- |
-| GET    | `/messages/:conversationId`| ✅    | `:conversationId`                   | Messages in a conversation.       |
-| POST   | `/sendMessage`             | ✅    | `{ message, conversationId }`       | Persist a message (REST path).    |
+| Method | Path                        | Auth | Body / Params                 | Description                    |
+| ------ | --------------------------- | ---- | ----------------------------- | ------------------------------ |
+| GET    | `/messages/:conversationId` | ✅   | `:conversationId`             | Messages in a conversation.    |
+| POST   | `/sendMessage`              | ✅   | `{ message, conversationId }` | Persist a message (REST path). |
 
 > In practice the frontend sends messages over the socket (`sendMessage` event) so they
 > are delivered live; the REST endpoint remains for non-socket clients.
@@ -236,23 +236,23 @@ authenticated socket — clients never need to announce who they are.
 
 ### Client → Server
 
-| Event                | Payload                                                              | Notes                                                                 |
-| -------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| `presence:request`   | —                                                                   | Server replies with `presence:snapshot` (useful after a reconnect).   |
-| `joinConversation`   | `conversationId`                                                    | Joins the conversation room.                                          |
-| `sendMessage`        | `{ message, conversationId }`                                       | Sender is `socket.user`; broadcasts `newMessage` to all participants. |
+| Event                | Payload                                                                                                  | Notes                                                                                                    |
+| -------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `presence:request`   | —                                                                                                        | Server replies with `presence:snapshot` (useful after a reconnect).                                      |
+| `joinConversation`   | `conversationId`                                                                                         | Joins the conversation room.                                                                             |
+| `sendMessage`        | `{ message, conversationId }`                                                                            | Sender is `socket.user`; broadcasts `newMessage` to all participants.                                    |
 | `createConversation` | `{ conversationType: "dm", targetUserId }` or `{ conversationType: "group", participantIds, groupName }` | Acknowledged via callback `{ success, conversation?, error? }`; emits `newConversation` to participants. |
-| `addToGroup`         | `{ participantIds, groupId }`                                       | Emits `newConversation` (updated group) to members.                   |
+| `addToGroup`         | `{ participantIds, groupId }`                                                                            | Emits `newConversation` (updated group) to members.                                                      |
 
 ### Server → Client
 
-| Event                | Payload                                       | Notes                                                            |
-| -------------------- | --------------------------------------------- | ---------------------------------------------------------------- |
-| `presence:snapshot`  | `string[]` (online userIds)                   | Sent on connect and on `presence:request`.                       |
-| `presence:update`    | `{ userId, online, lastSeen? }`               | Broadcast when a user goes online/offline.                       |
-| `newMessage`         | populated message                             | New message in a conversation the client participates in.        |
-| `newConversation`    | conversation                                  | A DM/group was created or updated; refetch conversation list.    |
-| `errorMessage`       | `string`                                      | A socket operation failed.                                       |
+| Event               | Payload                         | Notes                                                         |
+| ------------------- | ------------------------------- | ------------------------------------------------------------- |
+| `presence:snapshot` | `string[]` (online userIds)     | Sent on connect and on `presence:request`.                    |
+| `presence:update`   | `{ userId, online, lastSeen? }` | Broadcast when a user goes online/offline.                    |
+| `newMessage`        | populated message               | New message in a conversation the client participates in.     |
+| `newConversation`   | conversation                    | A DM/group was created or updated; refetch conversation list. |
+| `errorMessage`      | `string`                        | A socket operation failed.                                    |
 
 ---
 

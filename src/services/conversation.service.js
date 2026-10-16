@@ -40,7 +40,11 @@ async function addToGroup({ participantIds, conversationId, loggedInUserId }) {
     throw new ApiError(404, "Group not found");
   }
 
-  if (!group.participants.some(id => id.toString() === loggedInUserId.toString()))
+  if (
+    !group.participants.some(
+      (id) => id.toString() === loggedInUserId.toString(),
+    )
+  )
     throw new ApiError(403, "You cannot add users to this group");
 
   // TODO: add permissions for adding users
@@ -50,13 +54,13 @@ async function addToGroup({ participantIds, conversationId, loggedInUserId }) {
     {
       $addToSet: {
         participants: {
-          $each: participantIds
-        }
-      }
+          $each: participantIds,
+        },
+      },
     },
     {
-      new: true
-    }
+      new: true,
+    },
   );
 }
 
@@ -81,10 +85,7 @@ async function getConversationUsers({ conversationId, loggedInUserId }) {
     throw new ApiError(404, "Conversation not found or access denied");
   }
 
-  await conversation.populate(
-    "participants",
-    "username email avatarUrl"
-  );
+  await conversation.populate("participants", "username email avatarUrl");
 
   return conversation.participants;
 }

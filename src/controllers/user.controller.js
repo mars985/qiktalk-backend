@@ -2,7 +2,10 @@ const userService = require("../services/user.service");
 const { asyncHandler } = require("../utils/AsyncHandler");
 const { ApiResponse } = require("../utils/ApiResponse");
 const { ApiError } = require("../utils/ApiError");
-const { authCookieOptions, AUTH_COOKIE_NAME } = require("../constants/cookie.constants");
+const {
+  authCookieOptions,
+  AUTH_COOKIE_NAME,
+} = require("../constants/cookie.constants");
 
 const register = asyncHandler(async (req, res) => {
   const { username, email, password } = req.body;
@@ -15,9 +18,7 @@ const register = asyncHandler(async (req, res) => {
 
   res.cookie(AUTH_COOKIE_NAME, token, authCookieOptions);
 
-  res
-    .status(201)
-    .json(new ApiResponse(201, user, "User created successfully"));
+  res.status(201).json(new ApiResponse(201, user, "User created successfully"));
 });
 
 const login = asyncHandler(async (req, res) => {
@@ -30,23 +31,17 @@ const login = asyncHandler(async (req, res) => {
 
   res.cookie(AUTH_COOKIE_NAME, token, authCookieOptions);
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, user, "Login successful"));
+  res.status(200).json(new ApiResponse(200, user, "Login successful"));
 });
 
 const logout = asyncHandler(async (req, res) => {
   res.clearCookie(AUTH_COOKIE_NAME, authCookieOptions);
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, null, "Logged out successfully"));
+  res.status(200).json(new ApiResponse(200, null, "Logged out successfully"));
 });
 
 const verify = asyncHandler(async (req, res) => {
-  res
-    .status(200)
-    .json(new ApiResponse(200, req.user, "User verified"));
+  res.status(200).json(new ApiResponse(200, req.user, "User verified"));
 });
 
 const update = asyncHandler(async (req, res) => {
@@ -72,9 +67,7 @@ const search = asyncHandler(async (req, res) => {
     loggedInUserId,
   });
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, users));
+  res.status(200).json(new ApiResponse(200, users));
 });
 
 const getOnlineStatus = asyncHandler(async (req, res) => {
@@ -90,9 +83,7 @@ const getOnlineStatus = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found");
   }
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, status));
+  res.status(200).json(new ApiResponse(200, status));
 });
 
 module.exports = {

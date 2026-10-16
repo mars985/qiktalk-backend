@@ -17,56 +17,44 @@ const messageRoutes = express.Router({ mergeParams: true });
 
 router.use(authenticate);
 
-router.get(
-    "/",
-    conversationController.getConversations
+router.get("/", conversationController.getConversations);
+
+router.post(
+  "/createDM",
+  validate(conversationValidator.createDMSchema, "body"),
+  conversationController.createDM,
 );
 
 router.post(
-    "/createDM",
-    validate(conversationValidator.createDMSchema, "body"),
-    conversationController.createDM
-);
-
-router.post(
-    "/createGroup",
-    validate(conversationValidator.createGroupSchema, "body"),
-    conversationController.createGroup
+  "/createGroup",
+  validate(conversationValidator.createGroupSchema, "body"),
+  conversationController.createGroup,
 );
 
 // route => /conversations/:conversationId/
 
 conversationIdRoutes.use(
-    validate(conversationValidator.conversationIdSchema, "params")
+  validate(conversationValidator.conversationIdSchema, "params"),
 );
 
-conversationIdRoutes.get(
-    "/",
-    conversationController.getConversationById
-);
+conversationIdRoutes.get("/", conversationController.getConversationById);
 
-conversationIdRoutes.get(
-    "/users",
-    conversationController.getConversationUsers
-);
+conversationIdRoutes.get("/users", conversationController.getConversationUsers);
 
 conversationIdRoutes.post(
-    "/addToGroup",
-    validate(conversationValidator.addToGroupSchema, "body"),
-    conversationController.addToGroup
+  "/addToGroup",
+  validate(conversationValidator.addToGroupSchema, "body"),
+  conversationController.addToGroup,
 );
 
 // route => /conversations/:conversationId/messages/
 
-messageRoutes.get(
-    "/",
-    messageController.getMessages
-);
+messageRoutes.get("/", messageController.getMessages);
 
 messageRoutes.post(
-    "/send",
-    validate(messageValidator.sendMessageSchema, "body"),
-    messageController.sendMessage
+  "/send",
+  validate(messageValidator.sendMessageSchema, "body"),
+  messageController.sendMessage,
 );
 
 conversationIdRoutes.use("/messages", messageRoutes);

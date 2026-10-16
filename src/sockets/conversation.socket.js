@@ -9,7 +9,10 @@ const { ApiError } = require("../utils/ApiError");
 const { ApiResponse } = require("../utils/ApiResponse");
 const { handleSocketError } = require("../utils/handleSocketError");
 const { validateData } = require("../middlewares/validate.middleware");
-const { createDMSchema, createGroupSchema } = require("../validators/conversation.validator");
+const {
+  createDMSchema,
+  createGroupSchema,
+} = require("../validators/conversation.validator");
 
 module.exports = (io, socket) => {
   socket.on("createDM", async (data, callback) => {
@@ -48,7 +51,7 @@ module.exports = (io, socket) => {
 
       const conversation = await createGroup({
         participants: result.data.participantIds,
-        groupName: result.data.groupName
+        groupName: result.data.groupName,
       });
 
       conversation.participants.forEach((id) => {

@@ -12,9 +12,7 @@ const createDM = asyncHandler(async (req, res) => {
     loggedInUserId,
   });
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, dm, "DM retrieved successfully"));
+  res.status(200).json(new ApiResponse(200, dm, "DM retrieved successfully"));
 });
 
 const createGroup = asyncHandler(async (req, res) => {
@@ -22,7 +20,7 @@ const createGroup = asyncHandler(async (req, res) => {
 
   const group = await conversationService.createGroup({
     participants: participantIds,
-    groupName
+    groupName,
   });
 
   res
@@ -42,9 +40,7 @@ const addToGroup = asyncHandler(async (req, res) => {
     loggedInUserId,
   });
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, group, "Users added successfully"));
+  res.status(200).json(new ApiResponse(200, group, "Users added successfully"));
 });
 
 const getConversations = asyncHandler(async (req, res) => {
@@ -54,20 +50,19 @@ const getConversations = asyncHandler(async (req, res) => {
     loggedInUserId,
   });
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, conversations));
+  res.status(200).json(new ApiResponse(200, conversations));
 });
 
 const getConversationUsers = asyncHandler(async (req, res) => {
   const { conversationId } = req.params;
   const loggedInUserId = req.user._id;
 
-  const users = await conversationService.getConversationUsers({ conversationId, loggedInUserId });
+  const users = await conversationService.getConversationUsers({
+    conversationId,
+    loggedInUserId,
+  });
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, users));
+  res.status(200).json(new ApiResponse(200, users));
 });
 
 const getConversationById = asyncHandler(async (req, res) => {
@@ -79,9 +74,7 @@ const getConversationById = asyncHandler(async (req, res) => {
     loggedInUserId,
   });
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, conversation));
+  res.status(200).json(new ApiResponse(200, conversation));
 });
 
 module.exports = {

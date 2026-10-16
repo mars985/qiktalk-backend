@@ -1,5 +1,5 @@
 // userId (string) -> number of open sockets
-const connections = new Map(); 
+const connections = new Map();
 
 /**
  * Register a new socket connection for a user.

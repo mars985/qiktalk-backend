@@ -3,8 +3,7 @@ const Conversation = require("../models/conversation.model");
 const { ApiError } = require("../utils/ApiError");
 
 async function getMessages({ conversationId, loggedInUserId }) {
-  if (!conversationId)
-    throw new ApiError(400, "Missing fields");
+  if (!conversationId) throw new ApiError(400, "Missing fields");
 
   const conversation = await Conversation.findById({
     _id: conversationId,
@@ -39,7 +38,7 @@ async function sendMessage({ message, conversationId, loggedInUserId }) {
 
   const newMessage = await Message.create({
     body: message,
-    sender: loggedInUserId
+    sender: loggedInUserId,
   });
 
   conversation.messages.push(newMessage._id);

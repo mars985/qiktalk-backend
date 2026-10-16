@@ -1,20 +1,22 @@
 # Services
 
 ### user
+
 - sign up
 - log in
 - search usernames
 
 ### conversation
+
 - create dm
 - create group
 - add to group
 - get conversations (where user is participant)
 
 ### messages
+
 - send / create message
 - get messages (with conversation id)
-
 
 # Socket Events
 
