@@ -86,6 +86,17 @@ const getOnlineStatus = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, status));
 });
 
+const uploadAvatar = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const file = req.file;
+
+  const url = await userService.uploadAvatar({ userId, file });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, url, "User avatar uploaded successfully"));
+});
+
 module.exports = {
   register,
   login,
@@ -94,4 +105,5 @@ module.exports = {
   update,
   search,
   getOnlineStatus,
+  uploadAvatar,
 };

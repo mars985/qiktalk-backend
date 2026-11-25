@@ -6,6 +6,7 @@ const cookieParser = require("cookie-parser");
 const cors = require("cors");
 require("dotenv").config();
 const { errorHandler } = require("./middlewares/error.middleware");
+const { cleanupMiddleware } = require("./middlewares/cleanup.middleware");
 
 // -------------------- App Setup --------------------
 const app = express();
@@ -20,6 +21,7 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(cleanupMiddleware);
 
 // -------------------- HTTP + Socket Server --------------------
 const server = createServer(app);

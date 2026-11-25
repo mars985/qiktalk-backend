@@ -3,6 +3,8 @@ const router = express.Router();
 
 const { authenticate } = require("../middlewares/auth.middleware");
 const { validate } = require("../middlewares/validate.middleware");
+const { upload } = require("../middlewares/multer.middleware");
+
 const userController = require("../controllers/user.controller");
 const userValidator = require("../validators/user.validator");
 
@@ -36,6 +38,13 @@ router.get(
   authenticate,
   validate(userValidator.getOnlineStatusSchema, "params"),
   userController.getOnlineStatus,
+);
+
+router.post(
+  "/uploadAvatar",
+  authenticate,
+  upload.single("avatar"),
+  userController.uploadAvatar,
 );
 
 module.exports = router;
