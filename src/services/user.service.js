@@ -55,14 +55,7 @@ async function loginUser({ email, password }) {
 
   const token = createToken({ _id: user._id });
 
-  return {
-    user: {
-      _id: user._id,
-      email: user.email,
-      name: user.username,
-    },
-    token,
-  };
+  return { user, token };
 }
 
 async function updateUser({ username, email, password }) {
