@@ -19,4 +19,18 @@ const uploadOnCloudinary = async (localFilePath) => {
   }
 };
 
-module.exports = { uploadOnCloudinary };
+const destroyOnCloudinary = async ({ public_id, options = {} }) => {
+  try {
+    const result = await cloudinary.uploader.destroy(public_id, {
+      invalidate: true,
+      ...options,
+    });
+    if (result.result !== "ok") {
+      console.error("Cloudinary destroy returned:", result.result);
+    }
+  } catch (error) {
+    console.error("Failed to destroy file on Cloudinary:", error);
+  }
+};
+
+module.exports = { uploadOnCloudinary, destroyOnCloudinary };

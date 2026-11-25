@@ -87,10 +87,10 @@ const getOnlineStatus = asyncHandler(async (req, res) => {
 });
 
 const uploadAvatar = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
+  const user = req.user;
   const file = req.file;
 
-  const url = await userService.uploadAvatar({ userId, file });
+  const url = await userService.uploadAvatar({ user, file });
 
   return res
     .status(200)

@@ -3,7 +3,10 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/user.model");
 const presence = require("./presence.service");
 const { ApiError } = require("../utils/ApiError");
-const { uploadOnCloudinary } = require("../utils/cloudinary");
+const {
+  uploadOnCloudinary,
+  destroyOnCloudinary,
+} = require("./cloudinary.service");
 const { TOKEN_EXPIRY_TIME } = require("../constants/cookie.constants");
 
 function createToken({ _id }) {
@@ -128,7 +131,7 @@ async function getPresence({ userId }) {
   };
 }
 
-async function uploadAvatar({ userId, file }) {
+async function uploadAvatar({ user, file }) {
   if (!file) {
     throw new ApiError(400, "Avatar file is required");
   }
@@ -139,14 +142,19 @@ async function uploadAvatar({ userId, file }) {
     throw new ApiError(502, "Failed to upload avatar");
   }
 
-  const user = await User.findByIdAndUpdate(
-    userId,
-    { avatar: uploaded.secure_url },
-    { new: true },
-  );
+  const oldPublicId = user.avatarPublicId;
 
-  if (!user) {
-    throw new ApiError(404, "User not found");
+  try {
+    user.avatar = uploaded.secure_url;
+    user.avatarPublicId = uploaded.public_id;
+    await user.save();
+  } catch (error) {
+    await destroyOnCloudinary({ public_id: uploaded.public_id });
+    throw error;
+  }
+
+  if (oldPublicId) {
+    await destroyOnCloudinary({ public_id: oldPublicId });
   }
 
   return user.avatar;
