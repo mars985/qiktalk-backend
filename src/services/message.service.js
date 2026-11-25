@@ -3,10 +3,9 @@ const Conversation = require("../models/conversation.model");
 const { ApiError } = require("../utils/ApiError");
 
 async function getMessages({ conversationId, loggedInUserId }) {
-  if (!conversationId) throw new ApiError(400, "Missing fields");
-
-  const conversation = await Conversation.findById({
+  const conversation = await Conversation.findOne({
     _id: conversationId,
+    participants: loggedInUserId,
   }).populate({
     path: "messages",
     populate: {
@@ -23,10 +22,6 @@ async function getMessages({ conversationId, loggedInUserId }) {
 }
 
 async function sendMessage({ message, conversationId, loggedInUserId }) {
-  if (!message || !conversationId || !loggedInUserId) {
-    throw new ApiError(400, "Missing required fields");
-  }
-
   const conversation = await Conversation.findOne({
     _id: conversationId,
     participants: loggedInUserId,

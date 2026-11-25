@@ -16,10 +16,6 @@ function createToken({ _id }) {
 }
 
 async function createUser({ username, email, password }) {
-  if (!username || !email || !password) {
-    throw new ApiError(400, "Required fields missing");
-  }
-
   const existingEmail = await User.findOne({ email });
   if (existingEmail) {
     throw new ApiError(409, "User already exists");
@@ -44,9 +40,6 @@ async function createUser({ username, email, password }) {
 }
 
 async function loginUser({ email, password }) {
-  if (!email || !password) {
-    throw new ApiError(400, "Required fields missing");
-  }
   const user = await User.findOne({ email });
 
   if (!user || !(await bcrypt.compare(password, user.password))) {
@@ -79,9 +72,6 @@ async function updateUser({ username, email, password }) {
 }
 
 async function searchUsernames({ searchString, loggedInUserId }) {
-  if (!searchString || searchString.length < 3)
-    throw new ApiError(400, "Invalid search string");
-
   return User.find({
     username: { $regex: searchString, $options: "i" },
     _id: { $ne: loggedInUserId },
