@@ -4,10 +4,11 @@ const User = require("../models/user.model");
 const presence = require("./presence.service");
 const { ApiError } = require("../utils/ApiError");
 const {
-  uploadOnCloudinary,
+  uploadSquareImage,
   destroyOnCloudinary,
 } = require("./cloudinary.service");
 const { TOKEN_EXPIRY_TIME } = require("../constants/cookie.constants");
+const { avatarSize } = require("../constants/file.constants");
 
 function createToken({ _id }) {
   return jwt.sign({ _id: _id }, process.env.JWT_SECRET, {
@@ -119,7 +120,7 @@ async function uploadAvatar({ user, file }) {
     throw new ApiError(400, "Avatar file is required");
   }
 
-  const uploaded = await uploadOnCloudinary(file.path);
+  const uploaded = await uploadSquareImage(file.path, avatarSize);
 
   if (!uploaded) {
     throw new ApiError(502, "Failed to upload avatar");
@@ -128,11 +129,11 @@ async function uploadAvatar({ user, file }) {
   const oldPublicId = user.avatarPublicId;
 
   try {
-    user.avatar = uploaded.secure_url;
-    user.avatarPublicId = uploaded.public_id;
+    user.avatar = uploaded.url;
+    user.avatarPublicId = uploaded.publicId;
     await user.save();
   } catch (error) {
-    await destroyOnCloudinary({ public_id: uploaded.public_id });
+    await destroyOnCloudinary({ public_id: uploaded.publicId });
     throw error;
   }
 
@@ -143,6 +144,18 @@ async function uploadAvatar({ user, file }) {
   return user.avatar;
 }
 
+async function removeAvatar({ user }) {
+  const oldPublicId = user.avatarPublicId;
+
+  user.avatar = null;
+  user.avatarPublicId = null;
+  await user.save();
+
+  if (oldPublicId) {
+    await destroyOnCloudinary({ public_id: oldPublicId });
+  }
+}
+
 module.exports = {
   createUser,
   loginUser,
@@ -151,4 +164,5 @@ module.exports = {
   setLastSeen,
   getPresence,
   uploadAvatar,
+  removeAvatar,
 };

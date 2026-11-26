@@ -97,6 +97,16 @@ const uploadAvatar = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, url, "User avatar uploaded successfully"));
 });
 
+const removeAvatar = asyncHandler(async (req, res) => {
+  const user = req.user;
+
+  await userService.removeAvatar({ user });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, null, "User avatar deleted successfully"));
+});
+
 module.exports = {
   register,
   login,
@@ -106,4 +116,5 @@ module.exports = {
   search,
   getOnlineStatus,
   uploadAvatar,
+  removeAvatar,
 };
