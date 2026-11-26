@@ -74,7 +74,11 @@ async function getConversations({ loggedInUserId }) {
     participants: loggedInUserId,
   })
     .populate("participants", "username email avatar")
-    .populate("messages", "body updatedAt sender")
+    .populate({
+      path: "messages",
+      select: "body updatedAt sender",
+      populate: { path: "sender", select: "username" },
+    })
     .sort({ updatedAt: -1 });
 
   return conversations;
