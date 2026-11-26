@@ -34,6 +34,8 @@ const io = new Server(server, {
   },
 });
 
+app.set("io", io);
+
 // -------------------- Routes --------------------
 const userRoutes = require("./routes/user.routes");
 const messageRoutes = require("./routes/message.routes");

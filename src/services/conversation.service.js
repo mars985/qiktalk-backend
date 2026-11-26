@@ -1,5 +1,10 @@
 const Conversation = require("../models/conversation.model");
 const { ApiError } = require("../utils/ApiError");
+const {
+  uploadSquareImage,
+  destroyOnCloudinary,
+} = require("./cloudinary.service");
+const { avatarSize } = require("../constants/file.constants");
 
 async function createDM({ targetUserId, loggedInUserId }) {
   const existingDM = await Conversation.findOne({
@@ -68,7 +73,7 @@ async function getConversations({ loggedInUserId }) {
   const conversations = await Conversation.find({
     participants: loggedInUserId,
   })
-    .populate("participants", "username email")
+    .populate("participants", "username email avatar")
     .populate("messages", "body updatedAt sender")
     .sort({ updatedAt: -1 });
 
@@ -95,7 +100,7 @@ async function getConversationById({ conversationId, loggedInUserId }) {
     _id: conversationId,
     participants: loggedInUserId,
   })
-    .populate("participants", "_id username")
+    .populate("participants", "_id username avatar")
     .select("-messages");
 
   if (!conversation) {
@@ -105,6 +110,66 @@ async function getConversationById({ conversationId, loggedInUserId }) {
   return conversation;
 }
 
+async function findParticipantGroup({ conversationId, loggedInUserId }) {
+  const group = await Conversation.findOne({
+    _id: conversationId,
+    type: "group",
+    participants: loggedInUserId,
+  });
+
+  if (!group) {
+    throw new ApiError(404, "Group not found or access denied");
+  }
+
+  return group;
+}
+
+async function uploadGroupAvatar({ conversationId, loggedInUserId, file }) {
+  if (!file) {
+    throw new ApiError(400, "Avatar file is required");
+  }
+
+  const group = await findParticipantGroup({ conversationId, loggedInUserId });
+
+  const uploaded = await uploadSquareImage(file.path, avatarSize);
+
+  if (!uploaded) {
+    throw new ApiError(502, "Failed to upload avatar");
+  }
+
+  const oldPublicId = group.groupAvatarPublicId;
+
+  try {
+    group.groupAvatar = uploaded.url;
+    group.groupAvatarPublicId = uploaded.publicId;
+    await group.save();
+  } catch (error) {
+    await destroyOnCloudinary({ public_id: uploaded.publicId });
+    throw error;
+  }
+
+  if (oldPublicId) {
+    await destroyOnCloudinary({ public_id: oldPublicId });
+  }
+
+  return group;
+}
+
+async function removeGroupAvatar({ conversationId, loggedInUserId }) {
+  const group = await findParticipantGroup({ conversationId, loggedInUserId });
+  const oldPublicId = group.groupAvatarPublicId;
+
+  group.groupAvatar = null;
+  group.groupAvatarPublicId = null;
+  await group.save();
+
+  if (oldPublicId) {
+    await destroyOnCloudinary({ public_id: oldPublicId });
+  }
+
+  return group;
+}
+
 module.exports = {
   createDM,
   createGroup,
@@ -112,4 +177,6 @@ module.exports = {
   getConversations,
   getConversationUsers,
   getConversationById,
+  uploadGroupAvatar,
+  removeGroupAvatar,
 };

@@ -77,6 +77,52 @@ const getConversationById = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, conversation));
 });
 
+function emitGroupAvatar(io, group) {
+  io.to(group.participants.map(String)).emit("conversationUpdated", {
+    conversationId: group._id.toString(),
+    groupAvatar: group.groupAvatar,
+  });
+}
+
+const uploadGroupAvatar = asyncHandler(async (req, res) => {
+  const { conversationId } = req.params;
+  const loggedInUserId = req.user._id;
+
+  const group = await conversationService.uploadGroupAvatar({
+    conversationId,
+    loggedInUserId,
+    file: req.file,
+  });
+
+  emitGroupAvatar(req.app.get("io"), group);
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        group.groupAvatar,
+        "Group avatar uploaded successfully",
+      ),
+    );
+});
+
+const removeGroupAvatar = asyncHandler(async (req, res) => {
+  const { conversationId } = req.params;
+  const loggedInUserId = req.user._id;
+
+  const group = await conversationService.removeGroupAvatar({
+    conversationId,
+    loggedInUserId,
+  });
+
+  emitGroupAvatar(req.app.get("io"), group);
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, null, "Group avatar deleted successfully"));
+});
+
 module.exports = {
   createDM,
   createGroup,
@@ -84,4 +130,6 @@ module.exports = {
   getConversations,
   getConversationUsers,
   getConversationById,
+  uploadGroupAvatar,
+  removeGroupAvatar,
 };

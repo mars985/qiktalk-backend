@@ -2,6 +2,7 @@ const express = require("express");
 
 const { authenticate } = require("../middlewares/auth.middleware");
 const { validate } = require("../middlewares/validate.middleware");
+const { upload } = require("../middlewares/multer.middleware");
 
 const conversationController = require("../controllers/conversation.controller");
 const conversationValidator = require("../validators/conversation.validator");
@@ -45,6 +46,17 @@ conversationIdRoutes.post(
   "/addToGroup",
   validate(conversationValidator.addToGroupSchema, "body"),
   conversationController.addToGroup,
+);
+
+conversationIdRoutes.post(
+  "/uploadAvatar",
+  upload.single("avatar"),
+  conversationController.uploadGroupAvatar,
+);
+
+conversationIdRoutes.delete(
+  "/removeAvatar",
+  conversationController.removeGroupAvatar,
 );
 
 // route => /conversations/:conversationId/messages/
