@@ -1,0 +1,80 @@
+name: CI/CD
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+    env:
+      MONGO_URI: mongodb://127.0.0.1:27017/QikTalk
+      PORT: 4501
+      JWT_SECRET: ci-only
+      CORS_ORIGIN: http://localhost:5173
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --check .
+      - name: Start the app and request it
+        run: |
+          node src/app.js &
+          curl --fail --silent --show-error --retry 15 --retry-delay 1 --retry-all-errors http://127.0.0.1:$PORT/
+
+  deploy:
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    steps:
+      - name: Join the tailnet
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+          ping: ${{ secrets.SSH_HOST }}
+      - name: Deploy
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          APP_DIR: ${{ vars.APP_DIR }}
+          APP_PORT: ${{ vars.APP_PORT || '4501' }}
+        run: |
+          tailscale ssh "$SSH_USER@$SSH_HOST" \
+            "bash -s -- '$APP_DIR' '$GITHUB_SHA' '$APP_PORT'" <<'EOS'
+          set -euo pipefail
+          app_dir=$1
+          sha=$2
+          port=$3
+          if [ -s "$HOME/.nvm/nvm.sh" ]; then
+            set +u
+            . "$HOME/.nvm/nvm.sh"
+            set -u
+          fi
+          cd "${app_dir:?APP_DIR is not set}"
+          git fetch origin main
+          git merge --ff-only "$sha"
+          npm ci --omit=dev
+          pm2 restart api-qiktalk --update-env
+          curl --fail --silent --show-error --retry 15 --retry-delay 1 --retry-all-errors "http://127.0.0.1:$port/"
+          EOS
