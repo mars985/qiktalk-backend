@@ -1,312 +1,256 @@
 # QikTalk — Backend
 
-The real-time API and Socket.IO server behind **QikTalk**, a one-to-one and group
-chat app. Built with **Node.js + Express 5**, **Socket.IO 4**, **MongoDB (Mongoose 8)**,
-and **JWT** auth stored in an httpOnly cookie.
+REST API and Socket.IO server for **QikTalk**, a real-time chat app with direct messages,
+group chats, live presence and avatars.
 
-> Frontend lives in the [`qiktalk`](https://github.com/mars985/qiktalk) repo.
+Built with **Express 5**, **Socket.IO 4**, **MongoDB / Mongoose 8**, **Zod** validation,
+**JWT** auth in an httpOnly cookie, and **Cloudinary** for image storage.
 
----
+> The web client lives in [`qiktalk`](https://github.com/mars985/qiktalk).
 
 ## Features
 
-- **Auth** — register / login / logout with bcrypt-hashed passwords and JWTs in an httpOnly cookie.
-- **Direct messages & groups** — create DMs (deduplicated per pair) and named group conversations.
-- **Real-time messaging** — messages are persisted and fanned out to every participant over Socket.IO.
-- **Live presence** — an in-memory registry tracks who is online and broadcasts `online`/`offline`
-  transitions instantly; `lastseen` is persisted for "last seen…" display.
-- **User search** — case-insensitive username lookup for starting chats and building groups.
-
----
+- **Accounts:** register, log in and log out. Passwords are hashed with bcrypt and the session is a JWT in an httpOnly cookie.
+- **DMs and groups:** DMs are deduplicated per pair of users. Groups have a name, 3–100 members and an optional avatar.
+- **Real-time messaging:** messages are saved to MongoDB and pushed to every participant over Socket.IO.
+- **Live presence:** an in-memory, reference-counted registry broadcasts online and offline changes. `lastseen` is saved on disconnect.
+- **Avatars:** user and group avatars are uploaded through multer, cropped to 512×512 on Cloudinary, and replaced or removed cleanly.
+- **Validation:** every REST body, query and param, and every socket payload, is checked against a Zod schema.
+- **Consistent responses:** success and error responses share the same JSON envelope.
 
 ## Tech stack
 
-| Concern        | Choice                        |
-| -------------- | ----------------------------- |
-| Runtime        | Node.js                       |
-| HTTP framework | Express 5                     |
-| Realtime       | Socket.IO 4                   |
-| Database       | MongoDB via Mongoose 8        |
-| Auth           | JWT (`jsonwebtoken`) + bcrypt |
-| Cookies        | `cookie-parser` / `cookie`    |
-
----
+| Concern    | Choice                                 |
+| ---------- | -------------------------------------- |
+| Runtime    | Node.js ≥ 20                           |
+| HTTP       | Express 5                              |
+| Realtime   | Socket.IO 4                            |
+| Database   | MongoDB via Mongoose 8                 |
+| Validation | Zod 4                                  |
+| Auth       | `jsonwebtoken` + `bcrypt`              |
+| Uploads    | `multer` (temp disk) → Cloudinary      |
+| Tooling    | nodemon, Prettier, GitHub Actions, PM2 |
 
 ## Project structure
 
 ```
-qiktalk-backend/
-├── app.js                  # Express + HTTP + Socket.IO bootstrap
-├── config/
-│   └── db.js               # Mongoose connection
-├── routes/                 # Express routers (thin)
-│   ├── userRoutes.js
-│   ├── conversationRoutes.js
-│   └── messageRoutes.js
-├── controllers/            # Request/response handling
-│   ├── userController.js
-│   ├── conversationController.js
-│   └── messageController.js
-├── services/               # Business logic (DB access, auth, presence)
-│   ├── auth.js             # JWT verify, REST + socket auth middleware
-│   ├── userServices.js
-│   ├── conversationServices.js
-│   ├── messageServices.js
-│   └── presence.js         # In-memory online registry (ref-counted)
-├── sockets/                # Socket.IO event handlers
-│   ├── index.js            # Wires auth + per-connection handlers
-│   ├── userSockets.js      # Presence + room join
-│   ├── messageSockets.js   # sendMessage
-│   └── conversationSockets.js  # createConversation, addToGroup
-└── models/                 # Mongoose schemas
-    ├── usermodel.js
-    ├── conversationmodel.js
-    └── messagemodel.js
+src/
+├── app.js            Express + HTTP + Socket.IO bootstrap
+├── config/db.js      Mongoose connection
+├── constants/        Limits and options (lengths, file size, cookie, group size)
+├── routes/           Routers mounted under /api/v1
+├── controllers/      Request/response handling
+├── services/         Business logic, DB access, Cloudinary, presence registry
+├── sockets/          Socket.IO handlers (user, message, conversation)
+├── middlewares/      auth, validate, multer, cleanup, error
+├── validators/       Zod schemas
+├── models/           User, Conversation, Message
+└── utils/            ApiError, ApiResponse, asyncHandler, file helpers
 ```
-
----
 
 ## Getting started
 
-### 1. Install dependencies
+### Prerequisites
+
+- Node.js 20+
+- A MongoDB instance (local `mongod`, a Docker container, or Atlas)
+- A Cloudinary account (needed only for avatar uploads)
+
+### Setup
 
 ```bash
 npm install
-```
-
-### 2. Configure environment
-
-Copy the example file and fill in your values:
-
-```bash
 cp .env.example .env
+npm run dev
 ```
 
-| Variable      | Description                                                        | Example                             |
-| ------------- | ------------------------------------------------------------------ | ----------------------------------- |
-| `CORS_ORIGIN` | Frontend origin allowed for CORS **and** Socket.IO.                | `http://localhost:5173`             |
-| `MONGO_URI`   | MongoDB connection string (local `mongod` or Atlas).               | `mongodb://127.0.0.1:27017/QikTalk` |
-| `PORT`        | Port the server listens on.                                        | `4501`                              |
-| `JWT_SECRET`  | Secret used to sign JWTs (use a long random string in production). | `a-long-random-string`              |
+| Variable                | Description                                         | Example                             |
+| ----------------------- | --------------------------------------------------- | ----------------------------------- |
+| `CORS_ORIGIN`           | Frontend origin allowed for CORS and Socket.IO.     | `http://localhost:5173`             |
+| `MONGO_URI`             | MongoDB connection string.                          | `mongodb://127.0.0.1:27017/QikTalk` |
+| `PORT`                  | Port for the HTTP + Socket.IO server.               | `4501`                              |
+| `JWT_SECRET`            | Secret used to sign JWTs. Use a long random string. | `change_me`                         |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name.                              |                                     |
+| `CLOUDINARY_API_KEY`    | Cloudinary API key.                                 |                                     |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret.                              |                                     |
 
-### 3. Run
+### Scripts
 
-```bash
-npm run dev    # development with auto-restart (nodemon)
-npm start      # production (node app.js)
-```
+| Command       | Description                                  |
+| ------------- | -------------------------------------------- |
+| `npm run dev` | Start with nodemon (`NODE_ENV=development`). |
+| `npm start`   | Start with node (`NODE_ENV=production`).     |
 
-Health check: `GET /` responds with `API for QikTalk`.
-
----
-
-## Deploy with Docker
-
-The repo ships a multi-stage `Dockerfile` (slim, non-root runtime, built-in health check)
-and a `docker-compose.yml`. **MongoDB runs as a separate container** that the backend reaches
-over a shared Docker network — so one database can serve several MERN apps.
-
-### Recommended — shared `mern` network
-
-1. **Create the shared network** once (reused by all your MERN apps):
-
-   ```bash
-   docker network create mern
-   ```
-
-2. **Run MongoDB** on it as its own container, with a persistent volume:
-
-   ```bash
-   docker run -d --name mongo --network mern \
-     -v mongo-data:/data/db --restart unless-stopped mongo:7
-   ```
-
-3. **Start the backend** — it joins `mern` and finds Mongo by container name:
-
-   ```bash
-   cp .env.example .env          # set CORS_ORIGIN, JWT_SECRET, ...
-   docker compose up --build -d
-   ```
-
-The API is published on `http://localhost:4501`. Compose sets
-`MONGO_URI=mongodb://mongo:27017/QikTalk`, where `mongo` is resolved by Docker's DNS on the
-`mern` network. If your Mongo container has a different name/alias, update that value (in
-`docker-compose.yml` or your `.env`).
-
-```bash
-docker compose logs -f backend   # follow logs
-docker compose down              # stop the backend (Mongo keeps running)
-```
-
-### Alternative — host networking (Linux)
-
-If you instead run Mongo with `--network=host`, run the backend on the host network too and
-reach Mongo over `localhost`:
-
-```bash
-docker build -t qiktalk-backend .
-
-docker run -d --name qiktalk-backend --network=host \
-  -e MONGO_URI="mongodb://127.0.0.1:27017/QikTalk" \
-  -e CORS_ORIGIN="https://your-frontend.example.com" \
-  -e JWT_SECRET="a-long-random-string" \
-  -e PORT=4501 \
-  qiktalk-backend
-```
-
-- `--network=host` is **Linux-only** (limited/unsupported on Docker Desktop for Mac/Windows).
-- Host mode **ignores `-p`**; the app binds `PORT` directly on the host.
-
-### Managed MongoDB (Atlas)
-
-Skip the local Mongo and the `mern` network entirely — point `MONGO_URI` at your cluster and
-run the image standalone:
-
-```bash
-docker build -t qiktalk-backend .
-
-docker run -d --name qiktalk-backend -p 4501:4501 \
-  -e MONGO_URI="mongodb+srv://user:pass@cluster.mongodb.net/QikTalk" \
-  -e CORS_ORIGIN="https://your-frontend.example.com" \
-  -e JWT_SECRET="a-long-random-string" \
-  qiktalk-backend
-```
-
-The image's `HEALTHCHECK` polls `GET /`; check it with `docker ps` (look for `healthy`).
-
----
+`GET /` responds with `API for QikTalk` and serves as the health check.
 
 ## Authentication
 
-- On register/login the server signs a JWT (`{ email }`) and sets it as an **httpOnly `token` cookie**.
-- **REST**: protected routes use the `authenticate` middleware, which reads the cookie, verifies the
-  JWT, and attaches the Mongoose user document to `req.user`.
-- **Socket.IO**: the `socketAuth` middleware verifies the token from `handshake.auth.token`
-  (falling back to the cookie) and attaches the user to `socket.user`. Unauthenticated sockets are
-  rejected, so every connection has a trusted identity.
+- Register and login sign a JWT (`{ _id }`, 2-day expiry) and set it as the `token` cookie with
+  `httpOnly`, `secure`, `sameSite: "none"` and `partitioned`.
+- **REST:** the `authenticate` middleware verifies the cookie and loads the user into `req.user`. On
+  failure it clears the cookie and responds `401`.
+- **Socket.IO:** `socketAuth` reads the token from `handshake.auth.token`, falling back to the cookie,
+  and loads the user into `socket.user`. Connections without a valid token are rejected.
 
-The browser must send credentials (`withCredentials: true` for both axios and Socket.IO).
+Clients must send credentials (`withCredentials: true` for both HTTP and Socket.IO). Because the cookie
+is `secure`, cross-site setups need HTTPS.
 
----
+## Response format
+
+Successful responses:
+
+```json
+{ "statusCode": 200, "data": {}, "message": "Success", "success": true }
+```
+
+Errors, including validation failures, where `errors` holds the Zod issues:
+
+```json
+{
+  "success": false,
+  "statusCode": 400,
+  "message": "Validation failed",
+  "errors": []
+}
+```
+
+Socket acknowledgements use the same shapes.
 
 ## REST API
 
-All protected routes require the auth cookie. Responses use the shape
-`{ success: boolean, data?, message? }`.
+Every route is prefixed with **`/api/v1`**. 🔒 marks routes that need the auth cookie.
 
-### Users
+### Users — `/users`
 
-| Method | Path                       | Auth | Body / Params                   | Description                        |
-| ------ | -------------------------- | ---- | ------------------------------- | ---------------------------------- |
-| POST   | `/createUser`              | —    | `{ username, email, password }` | Register; sets the token cookie.   |
-| POST   | `/login`                   | —    | `{ email, password }`           | Login; sets the token cookie.      |
-| GET    | `/logout`                  | ✅   | —                               | Clears the token cookie.           |
-| GET    | `/verify`                  | ✅   | —                               | Returns the current user.          |
-| POST   | `/updateUser`              | ✅   | `{ username, email, password }` | Update password for a user.        |
-| GET    | `/searchUsernames`         | ✅   | `?searchString=`                | Username search (excludes self).   |
-| GET    | `/getOnlineStatus/:userId` | ✅   | `:userId`                       | `{ online, lastSeen }` for a user. |
+| Method | Path                       |     | Input                                 | Description                                           |
+| ------ | -------------------------- | --- | ------------------------------------- | ----------------------------------------------------- |
+| POST   | `/register`                |     | `{ username, email, password }`       | Create an account and set the cookie.                 |
+| POST   | `/login`                   |     | `{ email, password }`                 | Log in and set the cookie.                            |
+| POST   | `/logout`                  | 🔒  |                                       | Clear the cookie.                                     |
+| GET    | `/verify`                  | 🔒  |                                       | Return the current user.                              |
+| POST   | `/updateUser`              | 🔒  | `{ username, email, password }`       | Update a user's password.                             |
+| GET    | `/searchUsernames`         | 🔒  | `?searchString=` (3–50 chars)         | Case-insensitive username search, excluding yourself. |
+| GET    | `/getOnlineStatus/:userId` | 🔒  |                                       | `{ online, lastSeen }` for a user.                    |
+| POST   | `/uploadAvatar`            | 🔒  | `multipart/form-data`, field `avatar` | Upload or replace your avatar.                        |
+| DELETE | `/removeAvatar`            | 🔒  |                                       | Remove your avatar.                                   |
 
-### Conversations
+### Conversations — `/conversations` 🔒
 
-| Method | Path                    | Auth | Body / Params                   | Description                         |
-| ------ | ----------------------- | ---- | ------------------------------- | ----------------------------------- |
-| POST   | `/createDM`             | ✅   | `{ targetUserId }`              | Create/reuse a DM.                  |
-| POST   | `/createGroup`          | ✅   | `{ participantIds, groupName }` | Create a group.                     |
-| POST   | `/addToGroup`           | ✅   | `{ participantIds, groupId }`   | Add members to a group.             |
-| GET    | `/getConversations`     | ✅   | —                               | Conversations for the current user. |
-| GET    | `/:conversationId/user` | ✅   | `:conversationId`               | Participants of a conversation.     |
-| GET    | `/:conversationId`      | ✅   | `:conversationId`               | Conversation details (no messages). |
+| Method | Path                             | Input                                 | Description                                                             |
+| ------ | -------------------------------- | ------------------------------------- | ----------------------------------------------------------------------- |
+| GET    | `/`                              |                                       | Your conversations, newest first, with the last message and its sender. |
+| POST   | `/createDM`                      | `{ targetUserId }`                    | Create or reuse a DM.                                                   |
+| POST   | `/createGroup`                   | `{ participantIds, groupName }`       | Create a group (you are added automatically).                           |
+| GET    | `/:conversationId`               |                                       | Conversation details (without messages).                                |
+| GET    | `/:conversationId/users`         |                                       | Participants of the conversation.                                       |
+| POST   | `/:conversationId/addToGroup`    | `{ participantIds }`                  | Add members to a group.                                                 |
+| POST   | `/:conversationId/uploadAvatar`  | `multipart/form-data`, field `avatar` | Upload or replace the group avatar.                                     |
+| DELETE | `/:conversationId/removeAvatar`  |                                       | Remove the group avatar.                                                |
+| GET    | `/:conversationId/messages`      |                                       | Message history (participants only).                                    |
+| POST   | `/:conversationId/messages/send` | `{ message }` (1–1024 chars)          | Send a message over REST.                                               |
 
-### Messages
+The web client sends messages through the `sendMessage` socket event so they are delivered live. The REST
+endpoint is for clients that don't use sockets.
 
-| Method | Path                        | Auth | Body / Params                 | Description                    |
-| ------ | --------------------------- | ---- | ----------------------------- | ------------------------------ |
-| GET    | `/messages/:conversationId` | ✅   | `:conversationId`             | Messages in a conversation.    |
-| POST   | `/sendMessage`              | ✅   | `{ message, conversationId }` | Persist a message (REST path). |
+### Validation limits
 
-> In practice the frontend sends messages over the socket (`sendMessage` event) so they
-> are delivered live; the REST endpoint remains for non-socket clients.
-
----
+| Field      | Rule                                      |
+| ---------- | ----------------------------------------- |
+| Username   | 3–50 characters                           |
+| Password   | 8–128 characters                          |
+| Group name | 1–50 characters                           |
+| Group size | 3–100 participants, including the creator |
+| Message    | 1–1024 characters                         |
+| Avatar     | JPEG, PNG, WebP or GIF, up to 5 MB        |
 
 ## Socket.IO events
 
-Connect with the auth token (and `withCredentials: true`). Identity is taken from the
-authenticated socket — clients never need to announce who they are.
+Connect to the server root with credentials. The server identifies the user from the authenticated
+handshake, so clients never send their own user ID. Each socket joins a personal room named after
+its user ID, which the server uses to reach the user.
 
-### Client → Server
+### Client → server
 
-| Event                | Payload                                                                                                  | Notes                                                                                                    |
-| -------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `presence:request`   | —                                                                                                        | Server replies with `presence:snapshot` (useful after a reconnect).                                      |
-| `joinConversation`   | `conversationId`                                                                                         | Joins the conversation room.                                                                             |
-| `sendMessage`        | `{ message, conversationId }`                                                                            | Sender is `socket.user`; broadcasts `newMessage` to all participants.                                    |
-| `createConversation` | `{ conversationType: "dm", targetUserId }` or `{ conversationType: "group", participantIds, groupName }` | Acknowledged via callback `{ success, conversation?, error? }`; emits `newConversation` to participants. |
-| `addToGroup`         | `{ participantIds, groupId }`                                                                            | Emits `newConversation` (updated group) to members.                                                      |
+| Event              | Payload                         | Ack               | Effect                                                  |
+| ------------------ | ------------------------------- | ----------------- | ------------------------------------------------------- |
+| `sendMessage`      | `{ conversationId, message }`   | the saved message | Saves it and emits `newMessage` to every participant.   |
+| `createDM`         | `{ targetUserId }`              | the conversation  | Creates or reuses a DM.                                 |
+| `createGroup`      | `{ participantIds, groupName }` | the group         | Creates the group and emits `newGroup` to every member. |
+| `addToGroup`       | `{ groupId, participantIds }`   | the updated group | Adds members and emits `newGroup` to every member.      |
+| `joinConversation` | `conversationId`                |                   | Joins the conversation room.                            |
+| `presence:request` |                                 |                   | The server replies with `presence:snapshot`.            |
 
-### Server → Client
+### Server → client
 
-| Event               | Payload                         | Notes                                                         |
-| ------------------- | ------------------------------- | ------------------------------------------------------------- |
-| `presence:snapshot` | `string[]` (online userIds)     | Sent on connect and on `presence:request`.                    |
-| `presence:update`   | `{ userId, online, lastSeen? }` | Broadcast when a user goes online/offline.                    |
-| `newMessage`        | populated message               | New message in a conversation the client participates in.     |
-| `newConversation`   | conversation                    | A DM/group was created or updated; refetch conversation list. |
-| `errorMessage`      | `string`                        | A socket operation failed.                                    |
-
----
+| Event                 | Payload                           | When                                            |
+| --------------------- | --------------------------------- | ----------------------------------------------- |
+| `newMessage`          | `{ message, conversationId }`     | A message arrives in one of your conversations. |
+| `newGroup`            | conversation                      | A group you're in is created or gains members.  |
+| `conversationUpdated` | `{ conversationId, groupAvatar }` | A group's avatar is changed or removed.         |
+| `presence:snapshot`   | `string[]` of online user IDs     | On connect and after `presence:request`.        |
+| `presence:update`     | `{ userId, online, lastSeen? }`   | A user comes online or goes offline.            |
 
 ## How presence works
 
-`online` is **ephemeral runtime state**, so it is not stored in a boolean DB field.
+Online status is runtime state, so it is kept in memory and only `lastseen` is written to MongoDB.
 
-1. On every authenticated connection, the socket joins a **personal room** (`userId`) and is
-   recorded in an in-memory, **reference-counted** registry (`services/presence.js`). Multiple
-   tabs/devices count as multiple connections.
-2. When a user's **first** socket connects they transition offline → online, and the server
-   broadcasts `presence:update { online: true }`. The connecting client also receives a
-   `presence:snapshot` of everyone currently online.
-3. When a user's **last** socket disconnects they transition online → offline; the server writes
-   `lastseen = now` to MongoDB and broadcasts `presence:update { online: false, lastSeen }`.
-4. `GET /getOnlineStatus/:userId` returns the live `online` flag (or the persisted `lastSeen`)
-   so a freshly opened chat shows the correct status immediately; subsequent changes arrive live.
+1. Each authenticated socket increments a per-user connection count in `presence.service.js`, so multiple
+   tabs and devices are counted separately.
+2. When a user's first socket connects, the server broadcasts `presence:update { online: true }`.
+   The new socket also receives a `presence:snapshot`.
+3. When a user's last socket disconnects, the server saves `lastseen` and broadcasts
+   `presence:update { online: false, lastSeen }`.
+4. `GET /users/getOnlineStatus/:userId` returns the current state, so a newly opened chat is correct
+   before the next live update arrives.
 
----
+Because the registry lives in process memory, presence assumes a single server instance.
+
+## Avatar uploads
+
+1. `multer` writes the file to a per-request folder under `public/temp/`, enforcing the type and size limits.
+2. The service uploads it to Cloudinary with an eager 512×512 `fill` crop and stores the cropped URL and
+   its `public_id`.
+3. Uploading a new avatar deletes the old one from Cloudinary.
+4. The cleanup middleware deletes the temp folder once the response finishes, whether the request
+   succeeded or failed.
+
+`public_id` fields are never sent to clients.
 
 ## Data models
 
-**User**
-
 ```js
-{ username, email, password /* bcrypt hash */, lastseen: Date | null }
+User         { username, email, password, avatar, avatarPublicId, lastseen }
+Conversation { type: "dm" | "group", participants: [User], messages: [Message],
+               groupName, groupAvatar, groupAvatarPublicId, updatedAt }
+Message      { sender: User, body, seen: Map<userId, Date>, updatedAt }
 ```
 
-**Conversation**
+`password`, `*PublicId` and `__v` are removed whenever a document is serialised to JSON.
 
-```js
-{ type: "dm" | "group", participants: [User], messages: [Message], groupName, updatedAt }
+## Docker
+
+The repo includes a multi-stage `Dockerfile` (slim runtime, non-root user, health check on `GET /`)
+and a `docker-compose.yml` that expects MongoDB to run in its own container on a shared external
+`mern` network:
+
+```bash
+docker network create mern
+docker run -d --name mongo --network mern -v mongo-data:/data/db --restart unless-stopped mongo:7
+docker compose up --build -d
 ```
 
-**Message**
+Compose overrides `MONGO_URI` to `mongodb://mongo:27017/QikTalk` and publishes port `4501`. To use
+Atlas instead, build the image and pass your own `MONGO_URI` with `docker run -e`.
 
-```js
-{ sender: User, body: String, seen: Map<userId, Date>, updatedAt }
-```
+## CI/CD
 
----
+`.github/workflows/ci.yml` runs on every pull request and on pushes to `main`:
 
-## Troubleshooting
+- **check:** `npm ci`, `prettier --check .`, then boots the app against a MongoDB service container
+  and requests `GET /`.
+- **deploy** (pushes to `main` only): joins a Tailscale tailnet, SSHes into the server, fast-forwards
+  the checkout to the pushed commit, runs `npm ci --omit=dev`, restarts the `api-qiktalk` PM2 process
+  and checks that `GET /` responds.
 
-- **Mongo connection errors** — ensure `mongod` is running (or your Atlas string/IP allowlist is
-  correct) and that `MONGO_URI` is set; `config/db.js` throws early if it is missing.
-- **CORS / cookie issues** — `CORS_ORIGIN` must exactly match the frontend origin, and the frontend
-  must use `withCredentials: true`. Cross-site cookies in production require HTTPS and appropriate
-  `SameSite`/`Secure` settings.
-- **Socket won't connect (Unauthorized)** — the client must be logged in so the JWT cookie/token is
-  present in the handshake.
-
----
-
-## Roadmap
-
-See [`TODO.md`](./TODO.md) — system messages, group admin roles, and read receipts.
+The deploy job uses secrets `TS_OAUTH_CLIENT_ID`, `TS_OAUTH_SECRET`, `SSH_HOST` and `SSH_USER`, and
+variables `APP_DIR` and `APP_PORT` (default `4501`), all in the `production` environment.
